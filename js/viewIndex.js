@@ -26,4 +26,24 @@ $(function () {
         }
     });
     mySwiper.autoplay.stop();
+
+    // 首屏固定并调低透明度
+    const headerHeight = document.querySelector('.header')
+    const easing = [0.645, 0.045, 0.355, 1]
+    ScrollTrigger.create({
+        trigger: '.header',
+        start: '10 top',
+        end: headerHeight.offsetHeight, // 固定距离为当前元素高度
+        pin:true, // 固定
+        pinSpacing: false, // 不设置间距
+        scrub: true,
+        animation: gsap.timeline()
+                .to('.header',{opacity: 0.5})
+            // .fromTo('.copy-write .text',{top: '50px',duration:100,easing:easing},{top: 0},'>')
+            // .fromTo('.copy-write .theme h4',{top: '50px',duration:100,easing:easing},{top: 0},'>')
+            // .fromTo('.copy-write .theme h2',{top: '50px',duration:100,easing:easing},{top: 0}, '>')
+    })
+
+
+
 })

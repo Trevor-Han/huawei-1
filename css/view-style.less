@@ -13,7 +13,11 @@ html,body{
         width: 100%;
     }
 }
-
+.phone-body{
+    position: relative;
+    z-index: 9;
+    background: #fff;
+}
 .section-text{
     width: 100%;
     padding: 3rem 5rem;
@@ -28,10 +32,12 @@ html,body{
     .theme{
         min-width: 23%;
         h4{
+            position: relative;
             font-size: 2rem;
             margin: 1rem 0;
         }
         h2{
+            position: relative;
             line-height: 6rem;
             font-size: 4.5rem;
             span{
@@ -40,6 +46,7 @@ html,body{
         }
     }
     .text{
+        position: relative;
         font-size: 1.6rem;
         padding: 1.6rem 0;
     }
@@ -77,10 +84,11 @@ html,body{
         opacity: 0;
     }
 }
+
 .banner{
     width: 90%;
     margin: 0 auto;
-    padding: 5rem 0;
+    padding: 10rem 0;
     .swiper-container{
         width: 100%;
         height: 40vw;
@@ -229,7 +237,6 @@ html,body{
     }
 }
 
-
 @keyframes mySlideInUp {
     0% {
         transform: translateY(20%);
@@ -258,12 +265,111 @@ html,body{
     animation-name: mySlideInDown
 }
 
+.camera{
+    width: 100%;
+    background: #f8f8f8;
+    position: relative;
+    z-index: 399;
+    padding: 10rem 5rem;
+
+    .camera_center{
+        position: relative;
+        text-align: center;
+        padding: 30rem 0;
+        z-index: 199;
+        .pic_s5_pc{
+            position: absolute;
+            width: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50% ,-50%);
+            z-index: 99;
+            display: block;
+        }
+        .pic_s5_pc_allphone{
+            position: absolute;
+            width: 50%;
+            top: 136%;
+            left: 50%;
+            transform: translate(-50% ,-50%);
+            z-index: 98;
+            opacity: 1;
+            display: none;
+        }
+        .pic_s6_pc_1{
+            position: absolute;
+            width: 50%;
+            top:136%;
+            left: 50%;
+            transform: translate(-50% ,-50%);
+            opacity:0.5;
+            display: none;
+            z-index: 119;
+        }
+        .pic_s6_pc_5{
+            position: absolute;
+            width: 14.5%;
+            opacity: 0;
+            top:32%;
+            left: 50%;
+            transform: translate(-50% ,-50%);
+            z-index: 109;
+            border-radius: 0%;
+        }
+        .pic_s6_pc_3{
+            position: absolute;
+            width: 10%;
+            top: 22.5%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            opacity: 0;
+            border-radius: 5%;
+        }
+        .pic_s6_pc_4{
+            position: absolute;
+            width: 10%;
+            top: 22.5%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            opacity: 0;
+            border-radius: 5%;
+        }
+    }
+}
+.camera_1{
+    margin-top: 5rem;
+    .camera_1_center{
+        text-align: center;
+        img{
+            width: 80%;
+        }
+    }
+}
+
+
+.camera_2{
+    width: 100%;
+    margin-top: 10rem;
+    .camera_2_center{
+        text-align: center;
+        img{
+            width: 70%;
+            border-radius: 20px;
+        }
+    }
+}
+
+
 @media screen and (max-width: 980px){
     .copy-write{
         flex-wrap: wrap;
         .theme{
-            h2 span{
-                display: inline;
+            h2 {
+                font-size: 3rem;
+                line-height: 4rem;
+                span{
+                    display: inline;
+                }
             }
         }
 
@@ -289,7 +395,6 @@ html,body{
         }
     }
 
-
     .phone-image{
         padding: 10rem 0 0 0;
         .phone_left{
@@ -304,5 +409,12 @@ html,body{
         .phone_center{
             width: 75%;
         }
+    }
+
+    .camera .camera_center{
+        padding: 10rem 0;
+    }
+    .camera_2{
+        margin-top: 5rem;
     }
 }
