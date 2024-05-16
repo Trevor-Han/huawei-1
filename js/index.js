@@ -188,7 +188,6 @@ $(function () {
             backgroundSize:"100%",
             height:"100vh",
             width:"100%",
-            delay:0.5
         }),
     ]);
     section3.setTween(at);
