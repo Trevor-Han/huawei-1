@@ -7,7 +7,9 @@ html,body{
     font-size: 10px;
 }
 .container{
+    width: 100%;
     box-sizing: border-box;
+    overflow: hidden;
 }
 .header{
     width: 100%;
@@ -347,6 +349,25 @@ html,body{
             border-radius: 5%;
         }
     }
+    .mobile_camera_center{
+        .pic_s6_pc_3{
+            opacity: 1;
+            width: 27%;
+            top: 50%;
+            left: 15%;
+        }
+        .pic_s6_pc_5{
+            opacity: 1;
+            width: 27%;
+            top: 50%;
+        }
+        .pic_s6_pc_4{
+            opacity: 1;
+            width: 27%;
+            top: 50%;
+            left: 85%;
+        }
+    }
 }
 .camera_1{
     margin-top: 5rem;
@@ -381,11 +402,34 @@ html,body{
                 object-fit: cover;
             }
         }
+        .mobile_camera_2_center{
+            height: 50vw;
+            width: 85%;
+        }
     }
 
 }
+.pc_dom{
+    display: block;
+}
+.mobile_dom{
+    display: none;
+}
+@media screen and (max-width: 1024px){
+    .mobile_dom{
+        display: block;
+    }
+    .pc_dom{
+        display: none;
+    }
+    .camera .camera_center{
+        padding: 18rem 0;
+    }
+    .camera_2{
+        margin-top: 5rem;
+    }
 
-
+}
 @media screen and (max-width: 980px){
     .copy-write{
         flex-wrap: wrap;
@@ -437,35 +481,6 @@ html,body{
         }
     }
     .camera .camera_center{
-        padding: 10rem 0;
-        .pic_s5_pc{
-            display: none;
-        }
-        .pic_s6_pc_3{
-            opacity: 1;
-            width: 27%;
-            top: 50%;
-            left: 15%;
-        }
-        .pic_s6_pc_5{
-            opacity: 1;
-            width: 27%;
-            top: 50%;
-        }
-        .pic_s6_pc_4{
-            opacity: 1;
-            width: 27%;
-            top: 50%;
-            left: 85%;
-        }
-    }
-    .camera_2{
-        margin-top: 5rem;
-        .camera_2_con{
-            .camera_2_center{
-                height: 100vw;
-            }
-        }
-
+        padding: 15rem 0;
     }
 }

@@ -1,37 +1,9 @@
-$(function () {
+$(function (){
     const headerHeight = document.querySelector('.header')
-    const windowWidth = window.innerWidth;
-    const maxWidth = 750
+    const maxWidth = 1024;
+    let windowWidth = window.innerWidth
 
-    let mySwiper = new Swiper ('.banner .swiper-container',{
-        autoplay: {
-            delay: 3000,
-        },
-        // 如果需要分页器
-        pagination: {
-            el: '.swiper-pagination',
-            bulletClass : 'my-bullet',//需设置.my-bullet样式
-            bulletActiveClass: 'my-bullet-active',
-        },
-
-        on:{
-            init: function(){
-                swiperAnimateCache(this); //隐藏动画元素
-                swiperAnimate(this); //初始化完成开始动画
-            },
-            slideChangeTransitionEnd: function(){
-                swiperAnimate(this); //每个slide切换结束时也运行当前slide动画
-                //this.slides.eq(this.activeIndex).find('.ani').removeClass('ani'); 动画只展现一次，去除ani类名
-                let offsetY = this.activeIndex * 45;
-                // console.log(this.activeIndex);
-                $(".swiper-name>span").animate({top: -offsetY}, 1000);
-                $(".swiper-num>span").animate({top: -offsetY}, 1000);
-            }
-        }
-    });
-    mySwiper && mySwiper.autoplay.stop();
-
-    // 首屏固定并调低透明度
+// 首屏固定并调低透明度
     ScrollTrigger.create({
         trigger: '.header',
         start: 'top top',
@@ -40,7 +12,7 @@ $(function () {
         pinSpacing: false, // 不设置间距
         scrub: true,
         animation: gsap.timeline()
-                .to('.header',{opacity: 0.5})
+            .to('.header',{opacity: 0.5})
     })
 
     const startPosition = {top: '50px', opacity: 0}
@@ -75,22 +47,6 @@ $(function () {
             .to('.phone_text',{ opacity:1})
     })
 
-    // banner在视口时自动播放
-    ScrollTrigger.create({
-        trigger: '.banner',
-        start: 'top bottom',
-        scrub: true,
-        onEnter() {
-            mySwiper.autoplay.start();
-        },
-        onEnterBack(){
-            mySwiper.autoplay.start();
-        },
-        onLeave() {
-            mySwiper.autoplay.stop();
-        }
-    })
-
     if (windowWidth > maxWidth){
         ScrollTrigger.create({
             trigger: '.camera .camera_center',
@@ -116,12 +72,9 @@ $(function () {
             pin: true,
             scrub: true,
             animation: gsap.timeline()
-                .to('.camera_2_center',{ height:"100vh", width:"100%",top: '-100px'})
-                .to('.camera_2_center img',{ borderRadius: "0px"},'<')
+                .to('.pc_camera_2_center',{ height:"100vh", width:"100%",top: '-100px'})
+                .to('.pc_camera_2_center img',{ borderRadius: "0px"},'<')
         })
     }
-
-
-
 
 })

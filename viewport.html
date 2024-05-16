@@ -89,10 +89,15 @@
                 自然柔和映衬 你的面容，让你的每一次自拍，都掠尽风光。
             </div>
         </div>
-        <div class="camera_center">
+        <div class="camera_center pc_dom">
             <img src="img/pic_s5_pc.png" alt="" class="pic_s5_pc">
             <img src="img/pic_s5_pc_allphone.png" alt="" class="pic_s5_pc_allphone">
             <img src="img/pic_s6_pc_1.png" alt="" class="pic_s6_pc_1">
+            <img src="img/pic_s6_pc_5.png" alt="" class="pic_s6_pc_5">
+            <img src="img/pic_s6_pc_3.png" alt="" class="pic_s6_pc_3">
+            <img src="img/pic_s6_pc_4.png" alt="" class="pic_s6_pc_4">
+        </div>
+        <div class="camera_center mobile_dom mobile_camera_center">
             <img src="img/pic_s6_pc_5.png" alt="" class="pic_s6_pc_5">
             <img src="img/pic_s6_pc_3.png" alt="" class="pic_s6_pc_3">
             <img src="img/pic_s6_pc_4.png" alt="" class="pic_s6_pc_4">
@@ -134,11 +139,64 @@
             </div>
         </div>
         <div class="camera_2_con">
-            <div class="camera_2_center">
+            <div class="camera_2_center pc_dom pc_camera_2_center">
+                <img src="img/pic_s8_pc_2_new.jpg" alt="" class="pic_s8_pc_2_new">
+            </div>
+            <div class="camera_2_center mobile_dom mobile_camera_2_center">
                 <img src="img/pic_s8_pc_2_new.jpg" alt="" class="pic_s8_pc_2_new">
             </div>
         </div>
     </section>
 </div>
 </body>
+<script>
+$(function (){
+    let mySwiper = new Swiper ('.banner .swiper-container',{
+        autoplay: {
+            delay: 3000,
+        },
+        // 如果需要分页器
+        pagination: {
+            el: '.swiper-pagination',
+            bulletClass : 'my-bullet',//需设置.my-bullet样式
+            bulletActiveClass: 'my-bullet-active',
+        },
+
+        on:{
+            init: function(){
+                setTimeout(()=>{
+                    swiperAnimateCache(this); //隐藏动画元素
+                    swiperAnimate(this); //初始化完成开始动画
+                })
+            },
+            slideChangeTransitionEnd: function(){
+                swiperAnimate(this); //每个slide切换结束时也运行当前slide动画
+                //this.slides.eq(this.activeIndex).find('.ani').removeClass('ani'); 动画只展现一次，去除ani类名
+                let offsetY = this.activeIndex * 45;
+                // console.log(this.activeIndex);
+                $(".swiper-name>span").animate({top: -offsetY}, 1000);
+                $(".swiper-num>span").animate({top: -offsetY}, 1000);
+            }
+        }
+    });
+    mySwiper.autoplay.stop();
+
+    // banner在视口时自动播放
+    ScrollTrigger.create({
+        trigger: '.banner',
+        start: 'top bottom',
+        scrub: true,
+        onEnter() {
+            mySwiper.autoplay.start();
+        },
+        onEnterBack(){
+            mySwiper.autoplay.start();
+        },
+        onLeave() {
+            mySwiper.autoplay.stop();
+        }
+    })
+
+})
+</script>
 </html>
