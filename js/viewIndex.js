@@ -15,25 +15,6 @@ $(function (){
             .to('.header',{opacity: 0.5})
     })
 
-    const startPosition = {top: '50px', opacity: 0}
-    const endPosition = {top: 0, opacity: 1}
-    ScrollTrigger.create({
-        trigger: '.phone-body .copy-write',
-        start: 'top center',
-        end: $('.copy-write').height(),
-        scrub: true,
-        onEnter(){
-            gsap.to('.copy-write .theme h4',{...endPosition,duration: 0.4})
-            gsap.to('.copy-write .theme h2',{...endPosition,duration: 0.6})
-            gsap.to('.copy-write .text',{...endPosition,duration: 0.6})
-        },
-        onLeave(){
-            gsap.to('.copy-write .theme h4',{...endPosition,duration: 0.4})
-            gsap.to('.copy-write .theme h2',{...endPosition,duration: 0.6})
-            gsap.to('.copy-write .text',{...endPosition,duration: 0.6})
-        }
-    })
-
     ScrollTrigger.create({
         trigger: '.phone-image',
         start: 'top top',

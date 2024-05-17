@@ -6,6 +6,7 @@
     <title>huawei</title>
     <link rel="stylesheet" href="css/swiper.css">
     <link rel="stylesheet" href="css/swiper.animate.min.css">
+    <link rel="stylesheet" href="css/animate.min.css">
     <link rel="stylesheet/less" type="text/css" href="css/view-style.less">
     <script src="js/less.js"></script>
     <script src="js/jquery-3.1.1.js"></script>
@@ -14,6 +15,7 @@
     <script src="/js/gsap/gsap.min.js"></script>
     <script src="/js/gsap/ScrollTrigger.min.js"></script>
     <script src="js/viewIndex.js"></script>
+    <script src="js/wow.min.js"></script>
 </head>
 <body>
 <div class="container">
@@ -24,13 +26,13 @@
     <section class="phone-body section-text">
         <div class="copy-write">
             <div class="theme">
-                <h4>潮流设计+轻盈机身</h4>
-                <h2>
+                <h4 class="wow animate__fadeInUp">潮流设计+轻盈机身</h4>
+                <h2 class="wow animate__fadeInUp">
                     <span>一眼心动,</span>
                     <span>一触流连</span>
                 </h2>
             </div>
-            <div class="text">
+            <div class="text wow animate__fadeInUp">
                 nova 5 将炫光、渐变与钻石切面巧妙结合，形成光影与空间的视觉艺术。
                 创新 3D 精雕纹理工艺，打造幻境星芒般的光影效果，令机身色彩随光影自由流动，纯然中不失唯美梦幻。
                 一眼，怦然心动。7.33 毫米轻薄机身，优美的曲线弧度，打造舒适手感。一触，流连忘返。
@@ -78,13 +80,13 @@
     <section class="camera section-text">
         <div class="copy-write">
             <div class="theme">
-                <h4>3200万超高清自拍</h4>
-                <h2>
+                <h4 class="wow animate__fadeInUp">3200万超高清自拍</h4>
+                <h2 class="wow animate__fadeInUp">
                     <span>让美，</span>
                     <span>尽善尽美</span>
                 </h2>
             </div>
-            <div class="text">
+            <div class="text wow animate__fadeInUp">
                 掌控逆光，让光听从你的美。前置 AI HDR+ ，突破光线限制，逆光自拍时，明暗与细节清晰呈现，
                 自然柔和映衬 你的面容，让你的每一次自拍，都掠尽风光。
             </div>
@@ -107,14 +109,14 @@
     <section class="camera_1 section-text">
         <div class="copy-write">
             <div class="theme">
-                <h4>4800 万 AI 四摄</h4>
-                <h2>
+                <h4 class="wow animate__fadeInUp">4800 万 AI 四摄</h4>
+                <h2 class="wow animate__fadeInUp">
                     <span>影像间，</span>
                     <span>勾勒精彩</span>
                     <span>生活</span>
                 </h2>
             </div>
-            <div class="text">
+            <div class="text wow animate__fadeInUp">
                 一个有所准备的摄影师，是生活的见证者和记录者。而当你手持 nova 5，多场景四摄影像系统，就已帮你准备就
                 绪。无需携带多个镜头，不必繁琐设置参数，拿起手机，即可恣意记录属于你的精彩生活。
             </div>
@@ -127,13 +129,13 @@
     <section class="camera_2">
         <div class="copy-write section-text">
             <div class="theme">
-                <h4>4800 万像素摄像头</h4>
-                <h2>
+                <h4 class="wow animate__fadeInUp">4800 万像素摄像头</h4>
+                <h2 class="wow animate__fadeInUp">
                     <span>高清拍摄，</span>
                     <span> 细腻意想不到</span>
                 </h2>
             </div>
-            <div class="text">
+            <div class="text wow animate__fadeInUp">
                 定格的珍惜时刻，应经得起放大的考验。nova 5 搭载 4800 万像素摄像头，随手一拍的照片放大后，更多意想不
                 到的细节纷纷涌现。再有手持超级夜景，AI HDR+ 加持，逆光、弱光、暗光下的精彩瞬息依然细腻呈现。
             </div>
@@ -199,4 +201,5 @@ $(function (){
 
 })
 </script>
+<script>  new WOW({offset: 100,delay:0.2}).init();</script>
 </html>
