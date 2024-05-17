@@ -30,7 +30,7 @@ $(function (){
 
     if (windowWidth > maxWidth){
         ScrollTrigger.create({
-            trigger: '.camera .camera_center',
+            trigger: '.camera .pc_camera_center',
             start: 'top center',
             end: '+=2000',
             pin: true,
@@ -47,7 +47,7 @@ $(function (){
         })
 
         ScrollTrigger.create({
-            trigger: '.camera_2_con',
+            trigger: '.pc_camera_2_con',
             start: 'top 100',
             end: '+=1000',
             pin: true,
