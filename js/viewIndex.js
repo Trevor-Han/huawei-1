@@ -53,8 +53,8 @@ $(function (){
             pin: true,
             scrub: true,
             animation: gsap.timeline()
-                .to('.pc_camera_2_center',{ height:"100vh", width:"100%",top: '-100px'})
-                .to('.pc_camera_2_center img',{ borderRadius: "0px"},'<')
+                .to('.pc_camera_2_con .camera_2_center',{ height:"100vh", width:"100%",top: '-100px'})
+                .to('.pc_camera_2_con .camera_2_center img',{ borderRadius: "0px"},'<')
         })
     }
 
@@ -96,7 +96,6 @@ $(function (){
             scrub: true,
             onUpdate(self){
                 const progress = self.progress
-                console.log(progress);
                 let index = Math.ceil(progress * 64);
                 index  <= 63 && $('.DJI_img').empty();
                 $('.DJI_img').append(images[index])
@@ -114,7 +113,7 @@ $(function (){
 
                 changeFrame( $('.style__line-text-box .box_1'),progress,0.51,0.70)
                 changeFrame( $('.style__line-text-box .box_2'),progress,0.70,0.83)
-                changeFrame( $('.style__line-text-box .box_3'),progress,0.83,0.99)
+                changeFrame( $('.style__line-text-box .box_3'),progress,0.83,1)
 
             }
         })
