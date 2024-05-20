@@ -58,4 +58,69 @@ $(function (){
         })
     }
 
+    sectionDJI();
+    function sectionDJI(){
+        const images = [];
+
+        for(let i = 0; i< 64; i++){
+            let image = new Image();
+            image.src = `./img/DJI/${i+1}.jpg`
+            images[i] = image
+        }
+        $('.DJI_img').append(images[0])
+
+        const changeFrame = (el,progress,start,end)=>{
+            const showBox = (progress - start) / (end - start)
+            $(el).css({
+                'opacity': progress < end ? showBox : 0,
+            })
+
+            const lineEnd = end - 0.05
+            const progressWidth_1 = 34/((lineEnd - progress)*100)
+            const maxWidth_1 = lineEnd - progress <= 0 ? 34 : progressWidth_1
+            $(el).find(' .style__line___1h1bo').css({
+                'width': `${maxWidth_1}rem`,
+            })
+
+            const transform =  (8.75 - 0.75) / Math.abs(showBox * 7)
+            $(el).find(' .style__line-text-desc___10dbc').css({
+                'transform': `translateY(${transform}px) translateZ(0px)`,
+            })
+        }
+
+        ScrollTrigger.create({
+            trigger: '.DJI',
+            start: 'top top',
+            end: '+=2500',
+            pin: true,
+            scrub: true,
+            onUpdate(self){
+                const progress = self.progress
+                console.log(progress);
+                let index = Math.ceil(progress * 64);
+                index  <= 63 && $('.DJI_img').empty();
+                $('.DJI_img').append(images[index])
+
+                $('.DJI .pc_text .center_text').css({
+                    'opacity': (0.11 - progress) / 0.11,
+                    'fontSize': `${8 + progress * 20}rem`
+                })
+
+                const showText = (progress - 0.14) / (0.30 - 0.14)
+                const hideText = (0.46 - progress) / (0.46 - 0.3)
+                $('.style__desc-text___1yKdX').css({
+                    'opacity': progress < 0.30 ? showText : hideText,
+                })
+
+                changeFrame( $('.style__line-text-box .box_1'),progress,0.51,0.70)
+                changeFrame( $('.style__line-text-box .box_2'),progress,0.70,0.83)
+                changeFrame( $('.style__line-text-box .box_3'),progress,0.83,0.99)
+
+            }
+        })
+
+
+    }
+
+
 })

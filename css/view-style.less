@@ -409,6 +409,110 @@ html,body{
 .mobile_dom{
     display: none;
 }
+
+.DJI{
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    .DJI_img{
+        position: absolute;
+        top: 0;
+        img{
+            position: relative;
+            top: 0;
+            width: 100%;
+        }
+    }
+
+
+    .pc_text{
+        position: relative;
+        width: 100%;
+        height: 100%;
+        z-index: 99;
+        .center_text{
+            width: 100%;
+            font-weight: 600;
+            font-size: 8rem;
+            text-align: center;
+            letter-spacing: -0.03em;
+            padding: 0 0 1rem;
+            color: transparent;
+            background-image: linear-gradient(135deg, rgb(161, 253, 205), white, rgb(161, 253, 205));
+            background-clip: text;
+        }
+        .style__desc-text___1yKdX{
+            font-size: 24px;
+            line-height: 32px;
+            font-weight: 450;
+            letter-spacing: -0.03em;
+            color: white;
+            text-align: center;
+            opacity: 0;
+        }
+
+        .style__line-text-box{
+            .style__line-text-box___2lKKl{
+                opacity: 0;
+                .pos_center();
+                &:nth-of-type(1){
+                    left: 30%;
+                    top: 70%
+                }
+                &:nth-of-type(2){
+                    text-align: right;
+                    left: 73%;
+                    top: 40%;
+                    .style__line___1h1bo{
+                        right: 0;
+                    }
+                }
+                &:nth-of-type(3){
+                    left: 25%;
+                    top: 40%;
+                }
+                .style__line-text-title___3heSp{
+                    font-size: 3.2rem;
+                    line-height: 4rem;
+                    font-weight: 600;
+                    letter-spacing: -0.03em;
+                    color: transparent;
+                    background-image: linear-gradient(90deg, rgb(217, 94, 0), rgb(255, 178, 110), rgb(217, 94, 0));
+                    background-clip: text;
+                    width: 30rem;
+                    padding-bottom: 1.6rem;
+                }
+                .style__line___1h1bo{
+                    position: absolute;
+                    background-color: rgba(255, 255, 255, 0.65);
+                    height: 1px;
+                    width: 0;
+                    max-width: 34rem;
+                }
+                .style__line-text-desc___10dbc{
+                    font-size: 1.6rem;
+                    line-height: 2.4rem;
+                    font-weight: 400;
+                    letter-spacing: -0.02em;
+                    color: rgba(255, 255, 255, 0.65);
+                    background-image: none;
+                    width: 30rem;
+                    transform: translateY(0.75px) translateZ(0px);
+                    padding-top: 1.6rem;
+                }
+            }
+        }
+
+
+    }
+
+}
+.pos_center{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%)
+}
 @media screen and (max-width: 1024px){
     .mobile_dom{
         display: block;
