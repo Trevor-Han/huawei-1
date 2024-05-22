@@ -381,24 +381,20 @@ html,body{
         width: 100%;
         height: 100vh;
         position: relative;
-        .camera_2_center{
-            position: absolute;
-            text-align: center;
-            top: 0;
-            left: 50%;
-            width: 70%;
-            height: 80vh;
-            transform: translate(-50%, 0);
-            img{
-                border-radius: 20px;
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-            }
-        }
-        .mobile_camera_2_center{
-            height: 50vw;
-            width: 85%;
+    }
+    .camera_2_center{
+        position: absolute;
+        text-align: center;
+        top: 0;
+        left: 50%;
+        width: 70%;
+        height: 80vh;
+        transform: translate(-50%, 0);
+        img{
+            border-radius: 20px;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
     }
 
@@ -409,17 +405,52 @@ html,body{
 .mobile_dom{
     display: none;
 }
+.DJI_whole{
+    width: 100%;
+    height: 100vh;
+    background: #000;
+    position: relative;
+    margin-bottom: -1px;
+    img{
+        position: absolute;
+        width: 100%;
+        bottom: 0;
+    }
+    .style__whole_text{
+        position: relative;
+        height: 100%;
+        width: 100%;
+        text-align: center;
+        .whole_text__feature, .whole_text__service{
+            .pos_center();
+            .text-linear-gradient();
+            width: 60%;
+            font-size: 2.8rem;
+            background-image: linear-gradient(135deg, rgb(164, 164, 164), white, rgb(164, 164, 164));
+            z-index: 5;
+            top: 50%;
+            opacity: 0;
+        }
+    }
+    .style__whole_694{
+        z-index: 9;
+        bottom: 0;
+    }
 
+
+}
 .DJI{
     position: relative;
     width: 100%;
     height: 100vh;
+    overflow: hidden;
+    background: #000000;
     .DJI_img{
-        position: absolute;
-        top: 0;
+        .pos_center();
+        width: 100%;
         img{
             position: relative;
-            top: 0;
+            bottom: 0;
             width: 100%;
         }
     }
@@ -431,15 +462,8 @@ html,body{
         height: 100%;
         z-index: 99;
         .center_text{
-            width: 100%;
-            font-weight: 600;
-            font-size: 8rem;
+           .text-linear-gradient();
             text-align: center;
-            letter-spacing: -0.03em;
-            padding: 0 0 1rem;
-            color: transparent;
-            background-image: linear-gradient(135deg, rgb(161, 253, 205), white, rgb(161, 253, 205));
-            background-clip: text;
         }
         .style__desc-text___1yKdX{
             font-size: 24px;
@@ -451,56 +475,52 @@ html,body{
             opacity: 0;
         }
 
-        .style__line-text-box{
-            .style__line-text-box___2lKKl{
-                opacity: 0;
-                .pos_center();
-                &:nth-of-type(1){
-                    left: 30%;
-                    top: 70%
-                }
-                &:nth-of-type(2){
-                    text-align: right;
-                    left: 73%;
-                    top: 40%;
-                    .style__line___1h1bo{
-                        right: 0;
-                    }
-                }
-                &:nth-of-type(3){
-                    left: 25%;
-                    top: 40%;
-                }
-                .style__line-text-title___3heSp{
-                    font-size: 3.2rem;
-                    line-height: 4rem;
-                    font-weight: 600;
-                    letter-spacing: -0.03em;
-                    color: transparent;
-                    background-image: linear-gradient(90deg, rgb(217, 94, 0), rgb(255, 178, 110), rgb(217, 94, 0));
-                    background-clip: text;
-                    width: 30rem;
-                    padding-bottom: 1.6rem;
-                }
+        .style__line-text-box___2lKKl{
+            opacity: 0;
+            .pos_center();
+            &:nth-of-type(1){
+                left: 30%;
+                top: 60%
+            }
+            &:nth-of-type(2){
+                text-align: right;
+                left: 73%;
+                top: 35%;
                 .style__line___1h1bo{
-                    position: absolute;
-                    background-color: rgba(255, 255, 255, 0.65);
-                    height: 1px;
-                    width: 0;
-                    max-width: 34rem;
-                }
-                .style__line-text-desc___10dbc{
-                    font-size: 1.6rem;
-                    line-height: 2.4rem;
-                    font-weight: 400;
-                    letter-spacing: -0.02em;
-                    color: rgba(255, 255, 255, 0.65);
-                    background-image: none;
-                    width: 30rem;
-                    transform: translateY(0.75px) translateZ(0px);
-                    padding-top: 1.6rem;
+                    right: 0;
                 }
             }
+            &:nth-of-type(3){
+                left: 25%;
+                top: 35%;
+            }
+
+        }
+        .style__line-text-title___3heSp{
+            .text-linear-gradient();
+            font-size: 3.2rem;
+            line-height: 4rem;
+            background-image: linear-gradient(90deg, rgb(217, 94, 0), rgb(255, 178, 110), rgb(217, 94, 0));
+            width: 30rem;
+            padding-bottom: 1.6rem;
+        }
+        .style__line___1h1bo{
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.65);
+            height: 1px;
+            width: 0;
+            max-width: 34rem;
+        }
+        .style__line-text-desc___10dbc{
+            font-size: 1.6rem;
+            line-height: 2.4rem;
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            color: rgba(255, 255, 255, 0.65);
+            background-image: none;
+            width: 30rem;
+            transform: translateY(0.75px) translateZ(0px);
+            padding-top: 1.6rem;
         }
 
 
@@ -513,6 +533,18 @@ html,body{
     left: 50%;
     transform: translate(-50%,-50%)
 }
+
+.text-linear-gradient{
+    width: 100%;
+    font-weight: 600;
+    font-size: 8rem;
+    letter-spacing: -0.03em;
+    padding: 0 0 1rem;
+    color: transparent;
+    background-image: linear-gradient(135deg, rgb(161, 253, 205), white, rgb(161, 253, 205));
+    background-clip: text;
+}
+
 @media screen and (max-width: 1024px){
     .mobile_dom{
         display: block;
@@ -523,9 +555,64 @@ html,body{
     .camera .camera_center{
         padding: 18rem 0;
     }
+
     .camera_2{
         margin-top: 5rem;
+        .camera_2_con{
+            height: 80vw;
+        }
+        .camera_2_center{
+            height: 70vw;
+        }
     }
+
+    .DJI{
+        .DJI_img{
+            top: 70%;
+            width: 180%;
+        }
+
+        .pc_text{
+            .style__desc-text___1yKdX{
+                width: 80%;
+                font-size: 3rem;
+                line-height: 4.6rem;
+            }
+            .style__line-text-box___2lKKl{
+                top: 25%!important;
+                left: 32% !important;
+                text-align: left!important;
+                .style__line___1h1bo{
+                    opacity: 0;
+                }
+                .style__line-text-desc___10dbc{
+                    padding-top: 0;
+                    width: 45rem;
+                }
+                .style__line-text-title___3heSp{
+                    font-size: 5rem;
+                    line-height: 6.4rem;
+                }
+                .style__line-text-desc___10dbc{
+                    font-size: 3.2rem;
+                    line-height: 4rem;
+                }
+            }
+        }
+    }
+    .DJI_whole{
+        .style__whole_text{
+            .whole_text__feature{
+                opacity: 1;
+                top: 30%;
+            }
+            .whole_text__service{
+                opacity: 1;
+                top: 60%;
+            }
+        }
+    }
+
 
 }
 @media screen and (max-width: 980px){
@@ -580,11 +667,6 @@ html,body{
     }
     .camera .camera_center{
         padding: 15rem 0;
-    }
-    .camera_2{
-        .camera_2_con{
-            height: 70vw;
-        }
     }
 
 }

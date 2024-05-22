@@ -1,7 +1,5 @@
 $(function (){
     const headerHeight = document.querySelector('.header')
-    const maxWidth = 1024;
-    let windowWidth = window.innerWidth
 
 // 首屏固定并调低透明度
     ScrollTrigger.create({
@@ -28,37 +26,71 @@ $(function (){
             .to('.phone_text',{ opacity:1})
     })
 
-    if (windowWidth > maxWidth){
-        ScrollTrigger.create({
-            trigger: '.camera .pc_camera_center',
-            start: 'top center',
-            end: '+=2000',
-            pin: true,
-            scrub: true,
-            animation: gsap.timeline()
-                .to('.pic_s5_pc',{ top:"48%",display:"none"})
-                .to('.pic_s5_pc_allphone',{  width:"13%", top:"25%", opacity:0, display:"block"})
-                .to('.pic_s6_pc_1',{ width:"13%", top:"25.8%", opacity:1, display:"block"},'<')
-                .to('.pic_s6_pc_5',{ width:"12%", top:"22.5%", opacity:1},'<')
-                .to('.pic_s6_pc_1',{ opacity:0})
-                .to('.pic_s6_pc_3',{ left:"35%",opacity:0.8},'<')
-                .to('.pic_s6_pc_4',{ left:"65%",opacity:0.8},'<')
-                .to('.pic_s6_pc_5',{  width:"15%", borderRadius: "5%"})
-        })
+    ScrollTrigger.create({
+        trigger: '.camera .pc_camera_center',
+        start: 'top center',
+        end: '+=2000',
+        pin: true,
+        scrub: true,
+        animation: gsap.timeline()
+            .to('.pic_s5_pc', {top: "48%", display: "none"})
+            .to('.pic_s5_pc_allphone', {width: "13%", top: "25%", opacity: 0, display: "block"})
+            .to('.pic_s6_pc_1', {width: "13%", top: "25.8%", opacity: 1, display: "block"}, '<')
+            .to('.pic_s6_pc_5', {width: "12%", top: "22.5%", opacity: 1}, '<')
+            .to('.pic_s6_pc_1', {opacity: 0})
+            .to('.pic_s6_pc_3', {left: "35%", opacity: 0.8}, '<')
+            .to('.pic_s6_pc_4', {left: "65%", opacity: 0.8}, '<')
+            .to('.pic_s6_pc_5', {width: "15%", borderRadius: "5%"})
+    })
 
-        ScrollTrigger.create({
-            trigger: '.pc_camera_2_con',
-            start: 'top 100',
-            end: '+=1000',
-            pin: true,
-            scrub: true,
-            animation: gsap.timeline()
-                .to('.pc_camera_2_con .camera_2_center',{ height:"100vh", width:"100%",top: '-100px'})
-                .to('.pc_camera_2_con .camera_2_center img',{ borderRadius: "0px"},'<')
+    ScrollTrigger.matchMedia({
+        "(min-width: 1025px)":function (){
+            let t1 = gsap.timeline({
+                scrollTrigger: {
+                    trigger: '.camera_2_con',
+                    start: 'top 100',
+                    end: '+=1000',
+                    pin: true,
+                    scrub: true,
+                }
+            })
+            t1.to('.camera_2_con .camera_2_center',{ height:"100vh", width:"100%",top: '-100px'})
+                .to('.camera_2_con .camera_2_center img',{ borderRadius: "0px"},'<')
+        }
+    })
+
+
+    // const config = { attributes: true, childList: true, subtree: true };
+    // const targetNode = document.querySelector('.DJI_whole')
+    // const observer = new MutationObserver((mutations) => {
+    //     mutations.forEach((mutation) => {
+    //         console.log(mutation);
+    //     });
+    // });
+    // observer.observe(targetNode, config);
+
+
+    sectionDJIWhole();
+    sectionDJI();
+
+    function sectionDJIWhole(){
+        ScrollTrigger.matchMedia({
+            "(min-width: 1025px)":function (){
+                let t1 = gsap.timeline({
+                    scrollTrigger: {
+                        trigger: '.DJI_whole',
+                        start: 'top top',
+                        end: '+=2000',
+                        pin: true,
+                        scrub: true,
+                    }
+                })
+                t1.to('.style__whole_text .whole_text__feature',{opacity:1,top: '20%'})
+                    .to('.style__whole_text .whole_text__service',{opacity:1,top: '20%',delay: 0.3})
+                    .to('.style__whole_text .whole_text__feature',{opacity:0},'-=0.7')
+            }
         })
     }
-
-    sectionDJI();
     function sectionDJI(){
         const images = [];
 
