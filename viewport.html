@@ -307,7 +307,7 @@ $(function (){
 
     window.addEventListener('resize', onWindowResized);
 
-    // const controls = new OrbitControls(camera, renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
 
     const rgbeLoader = new RGBELoader();
     rgbeLoader.load('../models/gltf/sky.hdr',(texture)=>{
