@@ -214,6 +214,10 @@
         </div>
         <div class="DJI_img"></div>
     </section>
+
+    <section class="su7">
+        <div class="su7-con"></div>
+    </section>
 </div>
 </body>
 <script>
@@ -267,4 +271,114 @@ $(function (){
 })
 </script>
 <script>  new WOW({offset: 100,delay:0.2}).init();</script>
+
+<script type="importmap">
+    {
+        "imports": {
+                "three": "./js/3d/three.module.js"
+        }
+    }
+</script>
+<script type="module">
+    import * as THREE from 'three';
+    import { RGBELoader } from './js/loaders/RGBELoader.js';
+    import { GLTFLoader }  from './js/loaders/GLTFLoader.js';
+    import { OrbitControls }  from './js/3d/OrbitControls.js'
+
+    const scene = new THREE.Scene();
+    const clock = new THREE.Clock();
+    let ground,mixer;
+
+    const camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 500 );
+    camera.position.set( 3.99,  0.55, -0.43);
+
+    // const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(1024);
+    // cubeRenderTarget.texture.type = THREE.HalfFloatType;
+    // const cubeCamera = new THREE.CubeCamera(0.1,200,cubeRenderTarget);
+
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setAnimationLoop(renderLoop);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    $('.su7-con').append( renderer.domElement );
+
+
+    window.addEventListener('resize', onWindowResized);
+
+    // const controls = new OrbitControls(camera, renderer.domElement);
+
+    const rgbeLoader = new RGBELoader();
+    rgbeLoader.load('../models/gltf/sky.hdr',(texture)=>{
+        scene.background = texture;
+        scene.environment = texture;
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+    });
+
+    init();
+
+    function initGltfLoader(){
+        const gltfLoader = new GLTFLoader();
+        return new Promise(resolve => {
+            gltfLoader.load('../models/gltf/su7.glb',async (gltf)=>{
+                gltf.scene.traverse((child)=>{
+                    if (child.name === '平面'){
+                        // child.material.side = THREE.DoubleSide
+                        // child.material.roughness = 0.1
+                        // child.material.metalness = 0.4
+                        // child.material.envMap = cubeRenderTarget.texture
+                        // ground = child
+                    }
+                })
+                const animations = gltf.animations;
+                if (animations && animations.length){
+                    mixer = new THREE.AnimationMixer(gltf.scene);
+                    for (let i = 0; i< animations.length; i++){
+                        const action = mixer.clipAction(animations[i]);
+                        action.play();
+                    }
+
+                }
+                scene.add(gltf.scene);
+                resolve();
+            })
+        })
+    }
+
+    async function init(){
+        await initGltfLoader();
+        moveCamera();
+    }
+
+    function moveCamera(){
+        ScrollTrigger.create({
+            trigger: '.su7',
+            start: 'top top',
+            end: '+=2500',
+            pin: true,
+            scrub: true,
+            animation: gsap.timeline()
+                .to(camera.position,{z: -Math.PI})
+        })
+    }
+
+    function onWindowResized() {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+    }
+
+    function renderLoop(){
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        if (mixer) {
+            mixer.update(-clock.getDelta() * 3);
+        }
+        console.log(camera.position);
+        renderer.render(scene, camera);
+    }
+
+</script>
 </html>
