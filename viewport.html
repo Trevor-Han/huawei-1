@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/swiper.animate.min.css">
     <link rel="stylesheet" href="css/animate.min.css">
     <link rel="stylesheet/less" type="text/css" href="css/view-style.less">
+    <link rel="stylesheet" href="css/dat.gui.css">
     <script src="js/less.js"></script>
     <script src="js/PxLoader.min.js"></script>
     <script src="js/PxLoaderImage.js"></script>
@@ -18,6 +19,7 @@
     <script src="/js/gsap/ScrollTrigger.min.js"></script>
     <script src="js/viewIndex.js"></script>
     <script src="js/wow.min.js"></script>
+    <script src="js/3d/dat.gui.js"></script>
 </head>
 <body>
 <div class="container">
@@ -290,11 +292,19 @@ $(function (){
     let ground,mixer;
 
     const camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 500 );
-    camera.position.set( 3.99,  0.55, -0.43);
+    camera.position.set( 3.99,  0.55, 0);
 
-    // const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(1024);
-    // cubeRenderTarget.texture.type = THREE.HalfFloatType;
-    // const cubeCamera = new THREE.CubeCamera(0.1,200,cubeRenderTarget);
+    const gui = new GUI()
+    gui.add(camera.position, 'x', -10, 10)
+    gui.add(camera.position, 'y', -10, 10)
+    gui.add(camera.position, 'z', -10, 10)
+
+    scene.background = new THREE.Color( 0x222222 );
+    scene.fog = new THREE.Fog( 0x222222, 4, 20 );
+
+    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(1024);
+    cubeRenderTarget.texture.type = THREE.HalfFloatType;
+    const cubeCamera = new THREE.CubeCamera(0.1, 200, cubeRenderTarget);
 
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -308,28 +318,25 @@ $(function (){
     window.addEventListener('resize', onWindowResized);
 
     const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableZoom = false
+    // controls.enableDamping = ture
+    controls.enableRotate = false
 
-    const rgbeLoader = new RGBELoader();
-    rgbeLoader.load('../models/gltf/sky.hdr',(texture)=>{
-        scene.background = texture;
-        scene.environment = texture;
-        texture.mapping = THREE.EquirectangularReflectionMapping;
-    });
 
     init();
 
     function initGltfLoader(){
         const gltfLoader = new GLTFLoader();
         return new Promise(resolve => {
-            gltfLoader.load('../models/gltf/su7.glb',async (gltf)=>{
+            gltfLoader.load('../models/gltf/su7-car.glb',async (gltf)=>{
                 gltf.scene.traverse((child)=>{
-                    if (child.name === '平面'){
-                        // child.material.side = THREE.DoubleSide
-                        // child.material.roughness = 0.1
-                        // child.material.metalness = 0.4
-                        // child.material.envMap = cubeRenderTarget.texture
-                        // ground = child
-                    }
+                    // if (child.name === '平面'){
+                    //     // child.material.side = THREE.DoubleSide
+                    //     child.material.roughness = 0.1
+                    //     child.material.metalness = 0.4
+                    //     child.material.envMap = cubeRenderTarget.texture
+                    //     ground = child
+                    // }
                 })
                 const animations = gltf.animations;
                 if (animations && animations.length){
@@ -348,18 +355,56 @@ $(function (){
 
     async function init(){
         await initGltfLoader();
+        hemiLight();
+        initLight();
+        initGrid();
         moveCamera();
+    }
+    function hemiLight () {
+        const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444, 3 );
+        hemiLight.position.set( 0, 20, 0 );
+        scene.add( hemiLight );
+
+
+        const light =  new THREE.DirectionalLight(0xffffff,1);
+        light.position.set(0,0,10);
+        scene.add( light );
+
+        const light1 =  new THREE.DirectionalLight(0xffffff,1);
+        light.position.set(0,0,-10);
+        scene.add( light1 );
+
+    }
+
+    function initLight(){
+        const dLight = new THREE.DirectionalLight( '#fff', 3 );
+        dLight.position.set( 0, 20, 10 );
+        dLight.castShadow = true;
+        dLight.shadow.camera.top = 2;
+        dLight.shadow.camera.bottom = - 2;
+        dLight.shadow.camera.left = - 2;
+        dLight.shadow.camera.right = 2;
+        scene.add( dLight );
+
+    }
+
+    function initGrid(){
+        const grid = new THREE.GridHelper( 40, 20, 0xdddddd, 0xdddddd );
+        grid.material.opacity = 0.2;
+        grid.material.transparent = true;
+        scene.add( grid )
     }
 
     function moveCamera(){
+        const target = new THREE.Vector3(0.72,2.00,3.69)
         ScrollTrigger.create({
             trigger: '.su7',
-            start: 'top top',
+            start: 'center center',
             end: '+=2500',
             pin: true,
             scrub: true,
             animation: gsap.timeline()
-                .to(camera.position,{z: -Math.PI})
+                .to(camera.position,{x:target.x, y:target.y, z: target.z})
         })
     }
 
@@ -374,9 +419,10 @@ $(function (){
     function renderLoop(){
         renderer.setSize( window.innerWidth, window.innerHeight );
         if (mixer) {
-            mixer.update(-clock.getDelta() * 3);
+            // mixer.update(clock.getDelta());
         }
-        console.log(camera.position);
+        // console.log(camera.position);
+        controls.update();
         renderer.render(scene, camera);
     }
 
