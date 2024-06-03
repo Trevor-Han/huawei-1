@@ -295,8 +295,13 @@ $(function (){
     const dialog = document.querySelector('.dialog');
     const scene = new THREE.Scene();
     const clock = new THREE.Clock();
-    let ground,mixer;
+    let mixer;
     let isLandscapeScreen = false;
+    const radarVertexArray = [];
+    const radarMeshArray = [];
+    const vec3Zero = new THREE.Vector3(0,0.6,0)
+    const radarGroup = new THREE.Group();
+
 
     const camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 500 );
     camera.position.set( 3.99,  0.55, 0);
@@ -309,9 +314,9 @@ $(function (){
     scene.background = new THREE.Color( 0x222222 );
     scene.fog = new THREE.Fog( 0x222222, 4, 20 );
 
-    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(1024);
-    cubeRenderTarget.texture.type = THREE.HalfFloatType;
-    const cubeCamera = new THREE.CubeCamera(0.1, 200, cubeRenderTarget);
+    // const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(1024);
+    // cubeRenderTarget.texture.type = THREE.HalfFloatType;
+    // const cubeCamera = new THREE.CubeCamera(0.1, 200, cubeRenderTarget);
 
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -326,8 +331,7 @@ $(function (){
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableZoom = false
-    // controls.enableDamping = ture
-    controls.enableRotate = false
+    // controls.enableRotate = false
 
     window.addEventListener('scroll', () => {
         if (isElementInViewport(elementSu7) && isMobile()) {
@@ -353,13 +357,67 @@ $(function (){
         return new Promise(resolve => {
             gltfLoader.load('../models/gltf/su7-car.glb',async (gltf)=>{
                 gltf.scene.traverse((child)=>{
-                    // if (child.name === '平面'){
-                    //     // child.material.side = THREE.DoubleSide
-                    //     child.material.roughness = 0.1
-                    //     child.material.metalness = 0.4
-                    //     child.material.envMap = cubeRenderTarget.texture
-                    //     ground = child
-                    // }
+                    if (child.name === 'radar'){
+                        const boxGeo = new THREE.BoxGeometry(0.05,0.05,0.1)
+                        const positionAttributes = child.geometry.getAttribute('position')
+
+                        for (let i = 0; i< positionAttributes.count; i++){
+                            const vec3 = new THREE.Vector3();
+                            vec3.fromBufferAttribute(positionAttributes,i);
+                            radarVertexArray.push(vec3);
+                        }
+                            if (!radarMeshArray.length){
+                                scene.add(radarGroup);
+                                radarGroup.position.set(0, 0.5, 0);
+                                for (let k = 0; k < 6; k++){
+                                    for (let i = 0; i< radarVertexArray.length; i++){
+                                        const boxMat = new THREE.MeshBasicMaterial({color:0x00ff00});
+                                        const boxMesh = new THREE.Mesh(boxGeo,boxMat);
+                                        boxMesh.position.copy(radarVertexArray[i]);
+                                        boxMesh.visible = false;
+                                        radarGroup.add(boxMesh);
+
+                                        radarMeshArray.push(boxMesh);
+                                        boxMesh.lookAt(vec3Zero);
+                                        boxMesh.userData['originPos'] =  boxMesh.position.clone();
+                                        boxMesh.translateZ(-2);
+                                        boxMesh.userData['targetPos'] =  boxMesh.position.clone();
+                                        boxMesh.translateZ(2);
+
+                                        if (k === 0){
+                                            boxMesh.userData['delay'] = 0
+                                        }else if (k === 1){
+                                            boxMesh.userData['delay'] = 0.5
+                                        }else if (k === 2){
+                                            boxMesh.userData['delay'] = 1
+                                        }else if (k === 3){
+                                            boxMesh.userData['delay'] = 2
+                                        }else if (k === 4){
+                                            boxMesh.userData['delay'] = 2.5
+                                        }else if (k === 5){
+                                            boxMesh.userData['delay'] = 3
+                                        }
+                                    }
+                                    for (let j = 0; j< radarMeshArray.length; j++){
+                                        gsap.to(radarMeshArray[j].position,{
+                                            x: radarMeshArray[j].userData['targetPos'].x,
+                                            y: radarMeshArray[j].userData['targetPos'].y,
+                                            z: radarMeshArray[j].userData['targetPos'].z,
+                                            duration: 4,
+                                            delay: radarMeshArray[j].userData['delay'],
+                                            repeat: -1,
+                                            ease: 'none',
+                                            onStart:()=>{
+                                                radarMeshArray[j].visible = true
+                                            }
+                                        })
+                                    }
+                                }
+                            }
+
+
+
+                    }
                 })
                 const animations = gltf.animations;
                 if (animations && animations.length){
@@ -381,7 +439,7 @@ $(function (){
         hemiLight();
         initLight();
         initGrid();
-        moveCamera();
+        // moveCamera();
     }
     function hemiLight () {
         const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444, 3 );
