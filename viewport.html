@@ -306,9 +306,13 @@ $(function (){
     const radarVertexArray = [];
     const radarMeshArray = [];
     const vec3Zero = new THREE.Vector3(0,0.6,0)
+    const group = new THREE.Group();
+    // const roadGroup = new THREE.Group();
+    // const otherGroup = new THREE.Group();
+    // const carGroup = new THREE.Group();
     const radarGroup = new THREE.Group();
 
-    let mixer;
+    let mixer,mixer_other;
     let isLandscapeScreen = false;
     let isRadar = false;
     let nameToMeshDic = {};
@@ -324,6 +328,7 @@ $(function (){
 
     scene.background = new THREE.Color( 0x222222 );
     scene.fog = new THREE.Fog( 0x222222, 4, 20 );
+    scene.add(group);
 
     // const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(1024);
     // cubeRenderTarget.texture.type = THREE.HalfFloatType;
@@ -363,16 +368,36 @@ $(function (){
 
     init();
 
+    function initOtherCarLoader(){
+        const gltfLoader = new GLTFLoader();
+        return new Promise(resolve => {
+            gltfLoader.load('../models/gltf/otherCar.glb',async (gltf)=>{
+                gltf.scene.traverse((child)=>{
+                    if (['otherCar01','otherCar02'].includes(child.name)){
+                        nameToMeshDic[child.name] = child
+                        child.userData['originPos'] = child.position.clone();
+                    }
+                })
+                const animations = gltf.animations;
+                if (animations && animations.length){
+                    mixer_other = new THREE.AnimationMixer(gltf.scene);
+                    for (let i = 0; i< animations.length; i++){
+                        const action = mixer_other.clipAction(animations[i]);
+                        action.play();
+                    }
+
+                }
+                resolve(gltf.scene);
+            })
+        })
+    }
+
     function initGltfLoader(){
         const gltfLoader = new GLTFLoader();
         return new Promise(resolve => {
-            gltfLoader.load('../models/gltf/su7-all-car.glb',async (gltf)=>{
+            gltfLoader.load('../models/gltf/su7-car.glb',async (gltf)=>{
                 gltf.scene.traverse((child)=>{
                     nameToMeshDic[child.name] = child
-                    if (['otherCar01','otherCar02'].includes(child.name)){
-                        child.userData['originPos'] = child.position.clone();
-                        child.visible = false
-                    }
                 })
                 const animations = gltf.animations;
                 if (animations && animations.length){
@@ -383,41 +408,44 @@ $(function (){
                     }
 
                 }
-                const roadMesh = setRoadMesh();
-                roadMesh.visible = false
-                nameToMeshDic['roadMesh'] = roadMesh
-                scene.add(gltf.scene);
-                scene.add(roadMesh);
-                resolve();
+                resolve(gltf.scene);
             })
         })
     }
 
-    function setRoadMesh(){
-        const banMa = new THREE.TextureLoader().load("../img/banmaxian.jpg");
-        banMa.wrapS = THREE.RepeatWrapping;
-        banMa.wrapT = THREE.RepeatWrapping;
-        banMa.repeat.set(1, 6);
-        const roadMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(10,100),
-            new THREE.MeshBasicMaterial({
-                map:banMa,
-                toneMapped: false,
-                transparent: true,
-                opacity: 1
-            })
-        )
-        roadMesh.rotation.x = - Math.PI / 2;
-        roadMesh.position.y = -0.1;
-        return roadMesh
+
+    function initRoadMesh(){
+        return new Promise(resolve => {
+            const banMa = new THREE.TextureLoader().load("../img/banmaxian.jpg");
+            banMa.wrapS = THREE.RepeatWrapping;
+            banMa.wrapT = THREE.RepeatWrapping;
+            banMa.repeat.set(1, 6);
+            const roadMesh = new THREE.Mesh(
+                new THREE.PlaneGeometry(10,100),
+                new THREE.MeshBasicMaterial({
+                    map:banMa,
+                    toneMapped: false,
+                    transparent: true,
+                    opacity: 1,
+                })
+            )
+            roadMesh.rotation.x = - Math.PI / 2;
+            roadMesh.position.y = -0.1;
+            resolve(roadMesh)
+        })
     }
 
     async function init(){
-        await initGltfLoader();
+        const roadMesh = await initRoadMesh();
+        const otherCarLoad = await initOtherCarLoader();
+        const carLoad = await initGltfLoader();
         hemiLight();
         initLight();
-        initGrid();
+        // initGrid();
         buttonClick();
+        group.add(roadMesh,otherCarLoad,carLoad)
+        group.children[0].visible = false
+        group.children[1].visible = false
         // moveCamera();
     }
     function hemiLight () {
@@ -476,16 +504,23 @@ $(function (){
 
         windDrag.onclick = function (){
             isRadar = false;
-            radarGroup.visible = false;
-            nameToMeshDic['roadMesh'].visible = false;
-            nameToMeshDic['otherCar01'].visible = false;
-            nameToMeshDic['otherCar02'].visible = false;
+            group.children[0].visible = false
+            group.children[1].visible = false
+            group.children[3].visible = false
+            // radarGroup.visible = false;
+            // roadGroup.visible = false;
+            // otherGroup.visible = false;
         }
 
         radar.onclick = function (){
             isRadar = true;
+            group.children[0].visible = true
+            group.children[1].visible = true
+            radarGroup.visible = true
+
             setRadarMesh();
             setOtherCar();
+            console.log(group);
         }
     }
 
@@ -494,15 +529,16 @@ $(function (){
         const boxGeo = new THREE.BoxGeometry(0.05,0.05,0.1);
         const positionAttributes = child.geometry.getAttribute('position');
 
-        radarGroup.visible = true;
         for (let i = 0; i< positionAttributes.count; i++){
             const vec3 = new THREE.Vector3();
             vec3.fromBufferAttribute(positionAttributes,i);
             radarVertexArray.push(vec3);
         }
+        radarGroup.visible = true
         if (!radarMeshArray.length){
             scene.add(radarGroup);
             radarGroup.position.set(0, 0.5, 0);
+            group.add(radarGroup);
             for (let k = 0; k < 6; k++){
                 for (let i = 0; i< radarVertexArray.length; i++){
                     const boxMat = new THREE.MeshBasicMaterial({color: 0xffffff, depthTest: false});
@@ -514,9 +550,9 @@ $(function (){
                     radarMeshArray.push(boxMesh);
                     boxMesh.lookAt(vec3Zero);
                     boxMesh.userData['originPos'] =  boxMesh.position.clone();
-                    boxMesh.translateZ(-3);
+                    boxMesh.translateZ(-2.5);
                     boxMesh.userData['targetPos'] =  boxMesh.position.clone();
-                    boxMesh.translateZ(3);
+                    boxMesh.translateZ(2.5);
 
                     if (k === 0){
                         boxMesh.userData['delay'] = 0
@@ -554,9 +590,9 @@ $(function (){
         const otherCar01 = nameToMeshDic['otherCar01'];
         const otherCar02 = nameToMeshDic['otherCar02'];
 
-        nameToMeshDic['roadMesh'].visible = true;
-        otherCar01.visible = true;
-        otherCar02.visible = true;
+        // otherGroup.visible = true;
+        // otherCar01.visible = true;
+        // otherCar02.visible = true;
 
         if (otherCar01.userData['otherCar01Tween']){
             otherCar01.userData['otherCar01Tween'].kill();
@@ -564,9 +600,8 @@ $(function (){
         if (otherCar01.userData['otherCar02Tween']){
             otherCar01.userData['otherCar02Tween'].kill();
         }
-
-        gsap.to(nameToMeshDic['roadMesh'].material.map.offset,{
-            y: nameToMeshDic['roadMesh'].material.map.offset.y - 1,
+        gsap.to(group.children[0].material.map.offset,{
+            y: group.children[0].material.map.offset.y - 1,
             duration: 1.2,
             repeat: -1,
             ease: 'none'
@@ -582,7 +617,7 @@ $(function (){
         otherCar02.position.copy(otherCar02.userData['originPos']);
         otherCar01.userData['otherCar02Tween'] = gsap.to(otherCar02.position,{
             z: -10,
-            duration: 7,
+            duration: 6,
             repeat: -1
         })
     }
