@@ -296,7 +296,7 @@ $(function (){
     import * as THREE from 'three';
     import { RGBELoader } from './js/loaders/RGBELoader.js';
     import { GLTFLoader }  from './js/loaders/GLTFLoader.js';
-    import { OrbitControls }  from './js/3d/OrbitControls.js'
+    import { OrbitControls }  from './js/3d/OrbitControls.js';
 
     const elementSu7 = document.querySelector('.su7');
     const dialog = document.querySelector('.dialog');
@@ -316,7 +316,7 @@ $(function (){
     let isLandscapeScreen = false;
     let isRadar = false;
     let nameToMeshDic = {};
-    let hemisphereLight,dLight,spotLight;
+    let hemisphereLight,dLight;
 
 
     const camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 500 );
@@ -330,6 +330,7 @@ $(function (){
     scene.background = new THREE.Color( 0x000000 );
     scene.fog = new THREE.Fog( 0x000000, 4, 15 );
     scene.add(group);
+
 
     // const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(1024);
     // cubeRenderTarget.texture.type = THREE.HalfFloatType;
@@ -435,11 +436,15 @@ $(function (){
             banMa.wrapS = THREE.RepeatWrapping;
             banMa.wrapT = THREE.RepeatWrapping;
             banMa.repeat.set(1, 6);
+
+            const PlaneGeometry =  new THREE.PlaneGeometry(15,100)
+            const MeshStandardMaterial =  new THREE.MeshStandardMaterial({
+                map:banMa,
+                color: '#343434'
+            })
             const roadMesh = new THREE.Mesh(
-                new THREE.PlaneGeometry(15,100),
-                new THREE.MeshPhongMaterial({
-                    map:banMa
-                })
+                PlaneGeometry,
+                MeshStandardMaterial
             )
             roadMesh.rotation.x = - Math.PI / 2;
             roadMesh.position.y = -0.1;
@@ -455,13 +460,14 @@ $(function (){
         group.children[0].visible = false
         group.children[1].visible = false
 
+        // initOutlinePass(roadMesh);
         initHemisphereLight();
         initLight();
         // initGrid();
 
-        addSpotLight();
         buttOnClick();
         // moveCamera();
+
     }
     function initHemisphereLight () {
         hemisphereLight = new THREE.HemisphereLight( 0xffffff, 0x444444, 3 );
@@ -469,13 +475,13 @@ $(function (){
         scene.add( hemisphereLight );
 
 
-        // const light =  new THREE.DirectionalLight(0xffffff,1);
-        // light.position.set(0,0,10);
-        // scene.add( light );
-        //
-        // const light1 =  new THREE.DirectionalLight(0xffffff,1);
-        // light.position.set(0,0,-10);
-        // scene.add( light1 );
+        const light =  new THREE.DirectionalLight(0xffffff,1);
+        light.position.set(0,0,10);
+        scene.add( light );
+
+        const light1 =  new THREE.DirectionalLight(0xffffff,1);
+        light.position.set(0,0,-10);
+        scene.add( light1 );
 
     }
 
@@ -491,23 +497,6 @@ $(function (){
 
     }
 
-
-    function addSpotLight() {
-        // 创建聚光灯
-        spotLight = new THREE.SpotLight(0xffffff, 15); // 光的颜色和强度
-        spotLight.position.set(0, 3, 0); // 调整光源位置，这里假设汽车位于原点附近
-        spotLight.castShadow = true; // 开启阴影投射
-        spotLight.angle = Math.PI / 3; // 灯光锥角，控制光照的圆形范围大小
-        spotLight.penumbra = 0.1; // 半影软边宽度，增加真实感
-        spotLight.decay = 1; // 光照随着距离增加的衰减系数，影响光照范围
-        // 设置目标为汽车的位置，假设carMesh是您的汽车模型
-        spotLight.target = group.children[2];
-        spotLight.visible = false
-        // 将聚光灯添加到场景中
-        scene.add(spotLight);
-        scene.add(spotLight.target);
-
-    }
 
     function initGrid(){
         const grid = new THREE.GridHelper( 40, 20, 0xdddddd, 0xdddddd );
@@ -544,14 +533,11 @@ $(function (){
             group.children[0].visible = false
             group.children[1].visible = false
             radarGroup.visible = false
-            spotLight.visible = true
-            dLight.visible = true
-            hemisphereLight.visible = true
             nameToMeshDic['cameraOutRadar'] = gsap.to(camera.position,{
                 x: 3.99,
                 y: 0.55,
                 z: 0,
-                duration: 1.2
+                duration: 1
             })
         }
 
@@ -560,10 +546,16 @@ $(function (){
             group.children[0].visible = true
             group.children[1].visible = true
             radarGroup.visible = true
-            spotLight.visible = true
-            dLight.visible = false
-            hemisphereLight.visible = false
 
+            if (nameToMeshDic['cameraOutRadar']){
+                nameToMeshDic['cameraOutRadar'].kill();
+            }
+            nameToMeshDic['cameraToRadar'] = gsap.to(camera.position,{
+                x: 0.01,
+                y: 4.17,
+                z: -2.44,
+                duration: 1
+            })
             setRadarMesh();
             setOtherCar();
         }
@@ -645,13 +637,10 @@ $(function (){
         if (otherCar01.userData['otherCar02Tween']){
             otherCar01.userData['otherCar02Tween'].kill();
         }
-        if (nameToMeshDic['cameraOutRadar']){
-            nameToMeshDic['cameraOutRadar'].kill();
-        }
 
         gsap.to(group.children[0].material.map.offset,{
             y: group.children[0].material.map.offset.y - 1,
-            duration: 1.2,
+            duration: 3,
             repeat: -1,
             ease: 'none'
         })
@@ -659,22 +648,15 @@ $(function (){
         otherCar01.position.copy(otherCar01.userData['originPos']);
         otherCar01.userData['otherCar01Tween'] = gsap.to(otherCar01.position,{
             z: 10,
-            duration: 7,
+            duration: 9,
             repeat: -1
         })
 
         otherCar02.position.copy(otherCar02.userData['originPos']);
         otherCar01.userData['otherCar02Tween'] = gsap.to(otherCar02.position,{
             z: -10,
-            duration: 8,
+            duration: 10,
             repeat: -1
-        })
-
-        nameToMeshDic['cameraToRadar'] = gsap.to(camera.position,{
-            x: 0.01,
-            y: 4.17,
-            z: -2.44,
-            duration: 1.2
         })
 
     }
