@@ -298,6 +298,13 @@ $(function (){
     import { GLTFLoader }  from './js/loaders/GLTFLoader.js';
     import { OrbitControls }  from './js/3d/OrbitControls.js';
 
+    const buttonMap = {
+        tunnel: '1',
+        body: '2',
+        windDrag: '3',
+        radar: '4'
+    }
+
     const elementSu7 = document.querySelector('.su7');
     const dialog = document.querySelector('.dialog');
     const scene = new THREE.Scene();
@@ -312,6 +319,7 @@ $(function (){
     // const carGroup = new THREE.Group();
     const radarGroup = new THREE.Group();
 
+    let buttonSelect = buttonMap.tunnel
     let mixer,mixer_other;
     let isLandscapeScreen = false;
     let isRadar = false;
@@ -429,6 +437,18 @@ $(function (){
         })
     }
 
+    function initCarCurveLoader(){
+        const gltfLoader = new GLTFLoader();
+        return new Promise(resolve => {
+            gltfLoader.load('../models/gltf/xiedu.glb',async (gltf)=>{
+                gltf.scene.traverse((child)=>{
+                    nameToMeshDic['carCurve'] = child
+                })
+                resolve(gltf.scene);
+            })
+        })
+    }
+
 
     function initRoadMesh(){
         return new Promise(resolve => {
@@ -456,14 +476,16 @@ $(function (){
         const roadMesh = await initRoadMesh();
         const otherCarLoad = await initOtherCarLoader();
         const carLoad = await initGltfLoader();
-        group.add(roadMesh,otherCarLoad,carLoad)
+        const carCurveLoad = await initCarCurveLoader()
+        group.add(roadMesh,otherCarLoad,carLoad,carCurveLoad)
         group.children[0].visible = false
         group.children[1].visible = false
+        group.children[3].visible = false
 
         // initOutlinePass(roadMesh);
         initHemisphereLight();
         initLight();
-        // initGrid();
+        initGrid();
 
         buttOnClick();
         // moveCamera();
@@ -520,31 +542,34 @@ $(function (){
 
     function buttOnClick(){
         // const tunnel = document.getElementById('tunnel');
-        // const carBody = document.getElementById('car-body');
+        const carBody = document.getElementById('car-body');
         const windDrag = document.getElementById('wind-drag');
         const radar = document.getElementById('radar');
+        carBody.onclick = function (){
+            buttonSelect = buttonMap.body
+            const carCurve = nameToMeshDic['carCurve']
 
-        windDrag.onclick = function (){
-            if (nameToMeshDic['cameraToRadar']){
-                nameToMeshDic['cameraToRadar'].kill();
-            }
+            recoverState()
+            group.children[3].visible = true
 
-            isRadar = false;
-            group.children[0].visible = false
-            group.children[1].visible = false
-            radarGroup.visible = false
-            nameToMeshDic['cameraOutRadar'] = gsap.to(camera.position,{
-                x: 3.99,
-                y: 0.55,
-                z: 0,
-                duration: 1
+            gsap.to(carCurve.material.map.offset,{
+                y: -2,
+                duration: 60,
+                repeat: -1,
+                ease: 'none'
             })
+        }
+        windDrag.onclick = function (){
+            buttonSelect = buttonMap.windDrag
+            recoverState()
         }
 
         radar.onclick = function (){
+            buttonSelect = buttonMap.radar
             isRadar = true;
             group.children[0].visible = true
             group.children[1].visible = true
+            group.children[3].visible = false
             radarGroup.visible = true
 
             if (nameToMeshDic['cameraOutRadar']){
@@ -561,6 +586,67 @@ $(function (){
         }
     }
 
+    window.addEventListener('mousedown',(e)=>{
+        if (e.button === 0) {
+            if (buttonSelect === buttonMap.body) {
+                group.children[3].visible = true
+                const carCurve = nameToMeshDic['carCurve']
+
+                if (carCurve.userData['carCurveOpacityTween']){
+                    carCurve.userData['carCurveOpacityTween'].kill()
+                }
+                carCurve.userData['carCurveOpacityTween'] = gsap.to(carCurve.material, {
+                    opacity: 1,
+                    repeat: 0,
+                    duration: 4,
+                    ease: 'none',
+                });
+            }
+        }
+
+    })
+    window.addEventListener('mouseup',(e)=>{
+        if (e.button === 0){
+            if (buttonSelect === buttonMap.body){
+                const carCurve = nameToMeshDic['carCurve']
+
+                if (carCurve.userData['carCurveOpacityTween']){
+                    carCurve.userData['carCurveOpacityTween'].kill()
+                }
+                carCurve.userData['carCurveOpacityTween'] = gsap.to(carCurve.material, {
+                    opacity: 0,
+                    repeat: 0,
+                    duration: 1,
+                    ease: 'none',
+                    onComplete: () => {
+                        group.children[3].visible = false;
+                    }
+                });
+            }
+        }
+
+    })
+
+    function recoverState(){
+        if (nameToMeshDic['cameraToRadar']){
+            nameToMeshDic['cameraToRadar'].kill();
+        }
+        if (nameToMeshDic['carCurve'].userData['carCurveOpacityTween']){
+            nameToMeshDic['carCurve'].userData['carCurveOpacityTween'].kill();
+        }
+
+        isRadar = false;
+        group.children[0].visible = false
+        group.children[1].visible = false
+        group.children[3].visible = false
+        radarGroup.visible = false
+        nameToMeshDic['cameraOutRadar'] = gsap.to(camera.position,{
+            x: 3.99,
+            y: 0.55,
+            z: 0,
+            duration: 1
+        })
+    }
     function setRadarMesh(){
         const child = nameToMeshDic['radar'];
         const boxGeo = new THREE.BoxGeometry(0.02,0.01,0.1);
