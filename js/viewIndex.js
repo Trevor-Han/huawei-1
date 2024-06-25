@@ -43,6 +43,7 @@ $(function (){
             .to('.pic_s6_pc_5', {width: "15%", borderRadius: "5%"})
     })
 
+
     ScrollTrigger.matchMedia({
         "(min-width: 1025px)":function (){
             let t1 = gsap.timeline({
@@ -59,7 +60,57 @@ $(function (){
         }
     })
 
+    ScrollTrigger.create({
+        trigger: '.chip',
+        start: 'top top',
+        end: '+=3000',
+        pin: true,
+        scrub: true,
+        onUpdate(self){
+            const $h1 = document.querySelector('#chip-con h1');
+            const $picture = document.querySelector('.chip #picture-iPhone-15-pro');
+            const $theChip = document.querySelector('#the-chip');
+            const $chipSvg = document.querySelector('#chip-svg');
+            const $maskChip = document.querySelector('#mask-bg');
+            const progress = self.progress
+            const section = progress * 10 / 9
 
+            $theChip.style.width = $theChip.style.height =
+                    document.documentElement.clientWidth * 20 * (section * section * section) + 'px';
+
+            if (section <= 0.1) {
+                $h1.style.opacity = (0.1 - section) / 0.1;
+                $h1.style.marginTop = section * 1000 * -1 + 'px';
+
+                $picture.style.opacity = (0.1 - section) / 0.1;
+                $picture.style.marginTop = section * 1000 + 'px';
+
+            } else {
+                $h1.style.opacity = 0
+                $picture.style.opacity = 0
+            }
+
+            if (section <= 0.2) {
+                $chipSvg.style.opacity = (section - 0.1) / 0.1;
+            }else {
+                $chipSvg.style.opacity = 1
+            }
+
+            if (section >= 0.5) {
+                $maskChip.style.opacity = (1 - section) / 0.5;
+                $theChip.classList.add('transparent');
+            } else {
+                $maskChip.style.opacity = 1;
+                $theChip.classList.remove('transparent');
+            }
+
+            if (section >= 0.9) {
+                $theChip.style.opacity = (0.9 - section) / 0.05;
+            } else {
+                $theChip.style.opacity = 1
+            }
+        }
+    })
     // const config = { attributes: true, childList: true, subtree: true };
     // const targetNode = document.querySelector('.DJI_whole')
     // const observer = new MutationObserver((mutations) => {
@@ -72,7 +123,6 @@ $(function (){
 
     sectionDJIWhole();
     sectionDJI();
-
     function sectionDJIWhole(){
         ScrollTrigger.matchMedia({
             "(min-width: 1025px)":function (){

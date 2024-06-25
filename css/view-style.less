@@ -405,6 +405,73 @@ html,body{
 .mobile_dom{
     display: none;
 }
+.chip{
+    background-color: #000;
+    height: 100vh;
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    #chip-con{
+        width: 100%;
+        height: 100%;
+    }
+    #the-chip{
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%,-50%);
+        width: 100px;
+        height: 100px;
+        box-shadow: 0 0 0 100vw black, 0 0 0 30px black inset;
+        z-index: 10;
+        min-width: 100px;
+        min-height: 100px;
+        background-color: #000;
+
+        #chip-svg{
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+        }
+
+    }
+    #the-chip.transparent {
+        background-color: transparent;
+    }
+    h1 {
+        position: absolute;
+        left: 0;
+        color: #fff;
+        z-index: 20;
+        font-family: Helvetica, serif;
+        font-size: 6.4rem;
+        letter-spacing: -1px;
+        text-align: center;
+        width: 100%;
+        top: 30%;
+        transform: translate(0, -50%);
+        margin: 0;
+    }
+    video {
+        height: 100vh;
+        width: auto;
+        position: relative;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+    #picture-iPhone-15-pro{
+        position: absolute;
+        width: 80%;
+        top: 60%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 13;
+        img{
+            width: 100%;
+        }
+    }
+}
+
 .DJI_whole{
     width: 100%;
     height: 100vh;
