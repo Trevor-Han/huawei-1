@@ -111,6 +111,20 @@ $(function (){
             }
         }
     })
+    ScrollTrigger.matchMedia({
+        "(min-width: 1025px)":function (){
+            let t1 = gsap.timeline({
+                scrollTrigger: {
+                    trigger: '.chip-M4',
+                    start: 'top top',
+                    end: '+=3000',
+                    pin: true,
+                    scrub: true,
+                }
+            })
+            t1.fromTo('.chip-M4 #the-chip_M4 .mask-text',{transform: "scale(60)",delay: 0.1},{transform: "scale(1)"})
+        }
+    })
     // const config = { attributes: true, childList: true, subtree: true };
     // const targetNode = document.querySelector('.DJI_whole')
     // const observer = new MutationObserver((mutations) => {
