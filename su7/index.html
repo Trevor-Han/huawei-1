@@ -11,6 +11,21 @@
     <script src="js/3d/dat.gui.js"></script>
 </head>
 <body>
+
+<!-- loading相关 -->
+<div class="loading-con">
+    <div class="loading">
+        <div class="loading-circle"></div>
+        <div class="progress"></div>
+    </div>
+    <div class="loading-complete display-none">
+        <p>
+            加载完成
+            <svg t="1677233206130" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2675" width="24" height="24"><path d="M537.6 102.4c73.5744 0 142.336 20.6848 200.704 56.576 15.872 9.6256 16.7936 23.1424 2.9696 40.5504-14.08 16.2816-43.008 13.2608-86.8352-9.216l-0.0512 0.0512a318.1568 318.1568 0 1 0 104.8064 524.3904h0.3584c19.456-26.7776 40.5504-40.192 63.1296-40.2432l6.8096 0.4096c24.064 4.4032 30.4128 16.6912 19.0464 36.864l0.2048-0.3584-0.1536 0.1536-0.0512 0.2048h-0.1024l-7.936 10.5984A384 384 0 1 1 537.6 102.4z m332.288 201.0112a33.28 33.28 0 0 1 0 47.104l-276.48 276.48a31.2832 31.2832 0 0 1-0.512 0.4608l-3.584 3.584a30.72 30.72 0 0 1-43.4176 0l-1.8432-1.792-0.4096-0.512-135.3216-135.2704a30.72 30.72 0 0 1 0-43.4176l3.584-3.584a30.72 30.72 0 0 1 43.4688 0l112.2304 112.128 255.232-255.1808a33.28 33.28 0 0 1 47.104 0z" fill="#ffffff" p-id="2676"></path></svg>
+        </p>
+    </div>
+</div>
+
 <section class="su7">
     <div class="su7-con"></div>
 
@@ -36,10 +51,11 @@
 </script>
 <script type="module">
     import * as THREE from 'three';
-    import { RGBELoader } from './js/loaders/RGBELoader.js';
-    import { GLTFLoader }  from './js/loaders/GLTFLoader.js';
     import { OrbitControls }  from './js/3d/OrbitControls.js';
+    import resources from "./js/config/resources.js";
+    import Loader from './js/loaders/loadResource.js'
 
+    const loader = new Loader()
     const buttonMap = {
         tunnel: '1',
         body: '2',
@@ -56,9 +72,6 @@
     const radarMeshArray = [];
     const vec3Zero = new THREE.Vector3(0,0.6,0)
     const group = new THREE.Group();
-    // const roadGroup = new THREE.Group();
-    // const otherGroup = new THREE.Group();
-    // const carGroup = new THREE.Group();
     const radarGroup = new THREE.Group();
 
     let fovDefault = 60;
@@ -66,6 +79,7 @@
     let buttonSelect = buttonMap.tunnel
     let mixer,mixer_other;
     let isLandscapeScreen = false;
+    let isIntoScene = false;
     let isRadar = false;
     let runTunnel = false;
     let nameToMeshDic = {};
@@ -75,7 +89,7 @@
 
 
     const camera = new THREE.PerspectiveCamera( fovDefault, window.innerWidth / window.innerHeight, 0.1, 500 );
-    camera.position.set( 3.99,  0.55, 0);
+    camera.position.set( 1.53,  3.78, -1.46);
 
     // const gui = new GUI()
     // gui.add(camera.position, 'x', -10, 10)
@@ -123,44 +137,60 @@
 
     controls.minPolarAngle = 0.1;
     controls.maxPolarAngle = Math.PI / 2;
-    // controls.enableZoom = false
-    // controls.enableRotate = false
 
-    window.addEventListener('scroll', () => {
-        if (isElementInViewport(elementSu7) && isMobile()) {
-            if (!isLandscapeScreen){
-                dialog.classList.add('show-dialog')
-            }else {
-                dialog.classList.remove('show-dialog')
-            }
-        }else {
-            dialog.classList.remove('show-dialog')
+    loader.load(resources)
+
+    loader.onFileLoaded((name,res) => {
+        const result = loaderCustom(name)(res)
+        if (name !== 'sceneLoad'){
+            scene.add(result)
         }
-    });
+        loadMap[name] = result
 
-    window.addEventListener('orientationchange', function() {
-        isLandscapeScreen = !(screen.orientation.angle === 90 || screen.orientation.angle === 270);
-    });
+        const value = loader.totalSuccess / loader.total * 100
+        progressText(value)
+    })
 
+    loader.onLoadEnd(()=>{
+        loadMap['roadMesh'].visible = false
+        loadMap['otherCarLoad'].visible = false
 
-    init();
+        initHemisphereLight();
+        initLight();
+        initGrid();
 
-    function cubeBoxGeometry(){
-        const cubeSize = 1
-        const cubeGeo = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-        const cubeMat = new THREE.MeshBasicMaterial({ color: '#5af62e' });
-        const mesh = new THREE.Mesh(cubeGeo, cubeMat);
-        mesh.castShadow = true // 投射阴影
-        mesh.receiveShadow = true // 接受阴影
-        mesh.position.y = 1;
-        scene.add(mesh);
-    }
+        buttOnClick();
 
+        intoScene()
+        // cubeBoxGeometry()
+    })
 
-    function initOtherCarLoader(){
-        const gltfLoader = new GLTFLoader();
-        return new Promise(resolve => {
-            gltfLoader.load('../models/gltf/otherCar.glb',async (gltf)=>{
+    function loaderCustom(type){
+        const StrategyMap = {
+            'sceneLoad': (texture)=>{
+                    scene.background = texture;
+                    scene.environment = texture;
+                    texture.mapping = THREE.EquirectangularReflectionMapping;
+                },
+            'roadMesh': (banMa)=>{
+                banMa.wrapS = THREE.RepeatWrapping;
+                banMa.wrapT = THREE.RepeatWrapping;
+                banMa.repeat.set(1, 6);
+
+                const PlaneGeometry =  new THREE.PlaneGeometry(15,100)
+                const MeshStandardMaterial =  new THREE.MeshStandardMaterial({
+                    map:banMa,
+                    color: '#343434'
+                })
+                const roadMesh = new THREE.Mesh(
+                    PlaneGeometry,
+                    MeshStandardMaterial
+                )
+                roadMesh.rotation.x = - Math.PI / 2;
+                roadMesh.position.y = -0.1;
+                return roadMesh
+            } ,
+            'otherCarLoad': (gltf)=>{
                 gltf.scene.traverse((child)=>{
                     if (['otherCar01','otherCar02'].includes(child.name)){
                         nameToMeshDic[child.name] = child
@@ -174,17 +204,10 @@
                         const action = mixer_other.clipAction(animations[i]);
                         action.play();
                     }
-
                 }
-                resolve(gltf.scene);
-            })
-        })
-    }
-
-    function initGltfLoader(){
-        const gltfLoader = new GLTFLoader();
-        return new Promise(resolve => {
-            gltfLoader.load('../models/gltf/su7-car.glb',async (gltf)=>{
+                return gltf.scene
+            },
+            'carLoad': (gltf)=>{
                 gltf.scene.traverse((child)=>{
                     if(child.name === 'radar' || child.name === '车身'){
                         nameToMeshDic[child.name] = child
@@ -212,93 +235,72 @@
                     }
 
                 }
-                resolve(gltf.scene);
-            })
-        })
-    }
-
-    function initCarCurveLoader(){
-        const gltfLoader = new GLTFLoader();
-        return new Promise(resolve => {
-            gltfLoader.load('../models/gltf/xiedu.glb',async (gltf)=>{
+                return gltf.scene
+            },
+            'carCurveLoad': (gltf)=>{
                 gltf.scene.traverse((child)=>{
                     nameToMeshDic['carCurve'] = child
-                })
-                resolve(gltf.scene);
-            })
-        })
-    }
+                    if (child.name === 'xiedu'){
+                        child.material.opacity = 0
+                    }
 
-    function iniTunnelLoader(){
-        const gltfLoader = new GLTFLoader();
-        return new Promise(resolve => {
-            gltfLoader.load('../models/gltf/tunnel.glb',async (gltf)=>{
+                })
+                return gltf.scene
+            },
+            'tunnelLoader': (gltf)=>{
                 gltf.scene.traverse((child)=>{
                     if (child.name === 'tunnel'){
                         child.material.opacity = 0
                     }
                     nameToMeshDic['tunnel'] = child
                 })
-                resolve(gltf.scene);
-            })
-        })
-    }
-
-
-    function initRoadMesh(){
-        return new Promise(resolve => {
-            const banMa = new THREE.TextureLoader().load("../img/banmaxian.jpg");
-            banMa.wrapS = THREE.RepeatWrapping;
-            banMa.wrapT = THREE.RepeatWrapping;
-            banMa.repeat.set(1, 6);
-
-            const PlaneGeometry =  new THREE.PlaneGeometry(15,100)
-            const MeshStandardMaterial =  new THREE.MeshStandardMaterial({
-                map:banMa,
-                color: '#343434'
-            })
-            const roadMesh = new THREE.Mesh(
-                PlaneGeometry,
-                MeshStandardMaterial
-            )
-            roadMesh.rotation.x = - Math.PI / 2;
-            roadMesh.position.y = -0.1;
-            resolve(roadMesh)
-        })
-    }
-
-    async function init(){
-        if (loadIndex < 100){
-            loadIndex++
+                return gltf.scene
+            },
         }
-        const roadMesh = await initRoadMesh();
-        const otherCarLoad = await initOtherCarLoader();
-        const carLoad = await initGltfLoader();
-        const carCurveLoad = await initCarCurveLoader();
-        const tunnelLoader = await iniTunnelLoader();
-        // groundLoader = await initGroundLoader();
+        return StrategyMap[type]
+    }
 
-        scene.add(roadMesh,otherCarLoad,carLoad,carCurveLoad,tunnelLoader)
-        loadMap = {
-            'roadMesh': roadMesh,
-            'otherCarLoad': otherCarLoad,
-            'carLoad': carLoad,
-            'carCurveLoad': carCurveLoad,
-            'tunnelLoader': tunnelLoader,
-        }
-        loadMap['roadMesh'].visible = false
-        loadMap['otherCarLoad'].visible = false
-        loadMap['carCurveLoad'].visible = false
+    function updateLoadingProgress(progress,loading_text){
+        progress && (progress.textContent = loading_text);
+    }
+    function progressText(percent){
+        const text =  `加载场景模型: ${percent} %`
+        const progress = document.querySelector('.progress')
 
-        initHemisphereLight();
-        initLight();
-        initGrid();
-
-        buttOnClick();
-        // cubeBoxGeometry()
-        // moveCamera();
+        updateLoadingProgress(progress, text)
 
     }
+
+    function intoScene(){
+        const loading_complete = document.querySelector('.loading-complete')
+        const loading_con = document.querySelector('.loading-con')
+        loading_complete.classList.remove("display-none");
+        loading_con.classList.add("hide-loading");
+
+        loading_con.addEventListener('animationend', function() {
+            loading_con.classList.add("display-none")
+        });
+        gsap.to(camera.position,{
+            x: 3.99,
+            y: 0.55,
+            z: 0,
+            duration: 1,
+            ease: 'power5.inOut'
+        })
+
+    }
+
+    function cubeBoxGeometry(){
+        const cubeSize = 1
+        const cubeGeo = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+        const cubeMat = new THREE.MeshBasicMaterial({ color: '#5af62e' });
+        const mesh = new THREE.Mesh(cubeGeo, cubeMat);
+        mesh.castShadow = true // 投射阴影
+        mesh.receiveShadow = true // 接受阴影
+        mesh.position.y = 1;
+        scene.add(mesh);
+    }
+
     function initHemisphereLight () {
         hemisphereLight = new THREE.HemisphereLight( 0xffffff, 0x444444, 3 );
         hemisphereLight.position.set( 0, 20, 0 );
@@ -327,46 +329,11 @@
 
     }
 
-
     function initGrid(){
         const grid = new THREE.GridHelper( 40, 20, 0xdddddd, 0xdddddd );
         grid.material.opacity = 0.2;
         grid.material.transparent = true;
         scene.add( grid )
-    }
-
-    function initGroundLoader(){
-        return new Promise(resolve => {
-            const loader = new THREE.TextureLoader();
-            const texture = loader.load("../img/floor_normal.jpg");
-            const groundGeometry = new THREE.PlaneGeometry(40, 15);
-            const groundMaterial = new THREE.MeshStandardMaterial(
-                {
-                    side: THREE.DoubleSide,
-                    roughness: 0.1,
-                    metalness: .4,
-                    // envMap: cubeRenderTarget.texture,
-                    map: texture
-                });
-
-            const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
-            groundMesh.rotation.x = Math.PI * -0.5;
-            groundMesh.receiveShadow = true // 接受阴影
-            resolve(groundMesh)
-        })
-    }
-
-    function moveCamera(){
-        const target = new THREE.Vector3(0.72,2.00,3.69)
-        ScrollTrigger.create({
-            trigger: '.su7',
-            start: 'center center',
-            end: '+=2500',
-            pin: true,
-            scrub: true,
-            animation: gsap.timeline()
-                .to(camera.position,{x:target.x, y:target.y, z: target.z})
-        })
     }
 
     function buttOnClick(){
@@ -382,7 +349,6 @@
             recoverState()
             buttonSelect = buttonMap.body
             const carCurve = nameToMeshDic['carCurve']
-            loadMap['carCurveLoad'].visible = true
 
             gsap.to(carCurve.material.map.offset,{
                 y: -2,
@@ -403,7 +369,6 @@
             isRadar = true;
             loadMap['roadMesh'].visible = true
             loadMap['otherCarLoad'].visible = true
-            loadMap['carCurveLoad'].visible = false
             radarGroup.visible = true
 
             nameToMeshDic['cameraOutRadar'] && nameToMeshDic['cameraOutRadar'].kill()
@@ -469,10 +434,7 @@
             if (buttonSelect === buttonMap.body) {
                 const carCurve = nameToMeshDic['carCurve']
 
-                loadMap['carCurveLoad'].visible = true
-                if (carCurve.userData['carCurveOpacityTween']){
-                    carCurve.userData['carCurveOpacityTween'].kill()
-                }
+                carCurve.userData['carCurveOpacityTween'] && carCurve.userData['carCurveOpacityTween'].kill()
                 carCurve.userData['carCurveOpacityTween'] = gsap.to(carCurve.material, {
                     opacity: 1,
                     repeat: 0,
@@ -523,25 +485,34 @@
                     opacity: 0,
                     repeat: 0,
                     duration: 1,
-                    ease: 'none',
-                    onComplete: () => {
-                        loadMap['carCurveLoad'].visible = false;
-                    }
+                    ease: 'none'
                 });
             }
         }
 
     })
+    window.addEventListener('scroll', () => {
+        if (isElementInViewport(elementSu7) && isMobile()) {
+            if (!isLandscapeScreen){
+                dialog.classList.add('show-dialog')
+            }else {
+                dialog.classList.remove('show-dialog')
+            }
+        }else {
+            dialog.classList.remove('show-dialog')
+        }
+    });
+    window.addEventListener('orientationchange', function() {
+        isLandscapeScreen = !(screen.orientation.angle === 90 || screen.orientation.angle === 270);
+    });
 
     function recoverState(){
         nameToMeshDic['cameraToRadar'] && nameToMeshDic['cameraToRadar'].kill();
         nameToMeshDic['controlsTween'] && nameToMeshDic['controlsTween'].kill();
-        nameToMeshDic['carCurve'].userData['carCurveOpacityTween'] && nameToMeshDic['carCurve'].userData['carCurveOpacityTween'].kill()
 
         isRadar = false;
         loadMap['roadMesh'].visible = false
         loadMap['otherCarLoad'].visible = false
-        loadMap['carCurveLoad'].visible = false
         radarGroup.visible = false
         nameToMeshDic['cameraOutRadar'] = gsap.to(camera.position,{
             x: 3.99,
@@ -624,10 +595,6 @@
     function setOtherCar(){
         const otherCar01 = nameToMeshDic['otherCar01'];
         const otherCar02 = nameToMeshDic['otherCar02'];
-
-        // otherGroup.visible = true;
-        // otherCar01.visible = true;
-        // otherCar02.visible = true;
 
         otherCar01.userData['otherCar01Tween'] && otherCar01.userData['otherCar01Tween'].kill();
         otherCar01.userData['otherCar02Tween'] && otherCar01.userData['otherCar02Tween'].kill();
