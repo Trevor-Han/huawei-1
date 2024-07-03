@@ -99,14 +99,6 @@
     scene.background = new THREE.Color( 0x000000 );
     scene.fog = new THREE.Fog( 0x000000, 4, 40 );
 
-    // const rgbeLoader = new RGBELoader();
-    // rgbeLoader.load('../img/sky.hdr',(texture)=>{
-    //     scene.background = texture;
-    //     scene.environment = texture;
-    //     texture.mapping = THREE.EquirectangularReflectionMapping;
-    // });
-    // scene.add(group);
-
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize( window.innerWidth, window.innerHeight );

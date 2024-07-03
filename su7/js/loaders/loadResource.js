@@ -27,7 +27,7 @@ export default class Loader {
             console.warn('type is required')
             return
         }
-        let loader = this.textureLoader
+        let loader
 
         switch (type) {
             case 'GLTF':
