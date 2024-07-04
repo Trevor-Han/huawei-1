@@ -10,5 +10,6 @@ export default [
     { name: 'otherCarLoad',  type: LoaderType.GLTF, path: '../models/gltf/otherCar.glb' },
     { name: 'carLoad',  type: LoaderType.GLTF, path: '../models/gltf/su7-car.glb' },
     { name: 'carCurveLoad',  type: LoaderType.GLTF, path: '../models/gltf/xiedu.glb' },
+    { name: 'cubeGround',  type: LoaderType.GLTF, path: '../models/gltf/cubeGround.glb' },
     { name: 'tunnelLoader',  type: LoaderType.GLTF, path: '../models/gltf/tunnel.glb' }
 ]

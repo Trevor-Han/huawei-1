@@ -146,6 +146,7 @@
     loader.onLoadEnd(()=>{
         loadMap['roadMesh'].visible = false
         loadMap['otherCarLoad'].visible = false
+        loadMap['cubeGround'].visible = false
 
         initHemisphereLight();
         initLight();
@@ -153,7 +154,10 @@
 
         buttOnClick();
 
-        intoScene()
+        setTimeout(()=>{
+            intoScene()
+        },1000)
+
         // cubeBoxGeometry()
     })
 
@@ -239,6 +243,14 @@
                 })
                 return gltf.scene
             },
+            'cubeGround': (gltf)=>{
+                gltf.scene.traverse((child)=>{
+                    if (child.name === 'cubeGround'){
+                        nameToMeshDic[child.name] = child
+                    }
+                })
+                return gltf.scene
+            },
             'tunnelLoader': (gltf)=>{
                 gltf.scene.traverse((child)=>{
                     if (child.name === 'tunnel'){
@@ -256,7 +268,7 @@
         progress && (progress.textContent = loading_text);
     }
     function progressText(percent){
-        const text =  `加载场景模型: ${percent} %`
+        const text =  `加载场景模型: ${parseInt(percent)} %`
         const progress = document.querySelector('.progress')
 
         updateLoadingProgress(progress, text)
@@ -341,6 +353,7 @@
             recoverState()
             buttonSelect = buttonMap.body
             const carCurve = nameToMeshDic['carCurve']
+            loadMap['cubeGround'].visible = true
 
             gsap.to(carCurve.material.map.offset,{
                 y: -2,
@@ -425,6 +438,7 @@
             }
             if (buttonSelect === buttonMap.body) {
                 const carCurve = nameToMeshDic['carCurve']
+                loadMap['cubeGround'].visible = false
 
                 carCurve.userData['carCurveOpacityTween'] && carCurve.userData['carCurveOpacityTween'].kill()
                 carCurve.userData['carCurveOpacityTween'] = gsap.to(carCurve.material, {
@@ -471,6 +485,7 @@
 
             if (buttonSelect === buttonMap.body){
                 const carCurve = nameToMeshDic['carCurve']
+                loadMap['cubeGround'].visible = true
 
                 carCurve.userData['carCurveOpacityTween'] && carCurve.userData['carCurveOpacityTween'].kill()
                 carCurve.userData['carCurveOpacityTween'] = gsap.to(carCurve.material, {
@@ -505,6 +520,7 @@
         isRadar = false;
         loadMap['roadMesh'].visible = false
         loadMap['otherCarLoad'].visible = false
+        loadMap['cubeGround'].visible = false
         radarGroup.visible = false
         nameToMeshDic['cameraOutRadar'] = gsap.to(camera.position,{
             x: 3.99,
