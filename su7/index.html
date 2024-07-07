@@ -5,9 +5,9 @@
     <title>Su7</title>
     <link rel="stylesheet/less" type="text/css" href="css/su7.less">
     <link rel="stylesheet" href="css/dat.gui.css">
-    <script src="../js/less.js"></script>
-    <script src="../js/jquery-3.1.1.js"></script>
-    <script src="../js/gsap/gsap.min.js"></script>
+    <script src="js/less.js"></script>
+    <script src="js/jquery-3.1.1.js"></script>
+    <script src="js/gsap/gsap.min.js"></script>
     <script src="js/3d/dat.gui.js"></script>
 </head>
 <body>
@@ -173,7 +173,7 @@
                 banMa.wrapT = THREE.RepeatWrapping;
                 banMa.repeat.set(1, 6);
 
-                const PlaneGeometry =  new THREE.PlaneGeometry(15,100)
+                const PlaneGeometry =  new THREE.PlaneGeometry(100,15)
                 const MeshStandardMaterial =  new THREE.MeshStandardMaterial({
                     map:banMa,
                     color: '#343434'
@@ -211,6 +211,9 @@
                     if (child.name === 'topLigt'){
                         child.visible = false
                     }
+                    if(['Object_40','Object_36','Object_21','Object_49','Object_53'].includes(child.name)){
+                        child.visible = false
+                    }
                     if (child.name === '平面'){
                         // child.visible = false
                         child.material.envMap = cubeRenderTarget.texture;
@@ -226,10 +229,10 @@
                             // child.receiveShadow = true;
                         }
                     if (child.type === 'Mesh'){
-                        // child.material.envMap = cubeRenderTarget.texture;
-                        // child.material.envMapIntensity = 5;
-                        // child.castShadow = true;
-                        // child.receiveShadow = true;
+                        child.material.envMap = cubeRenderTarget.texture;
+                        child.material.envMapIntensity = 5;
+                        child.castShadow = true;
+                        child.receiveShadow = true;
                     }
 
                 })
@@ -387,6 +390,7 @@
             loadMap['roadMesh'].visible = true
             loadMap['otherCarLoad'].visible = true
             radarGroup.visible = true
+            groundLoader.visible = false
 
             nameToMeshDic['cameraOutRadar'] && nameToMeshDic['cameraOutRadar'].kill()
             nameToMeshDic['controlsTween'] && nameToMeshDic['controlsTween'].kill()
@@ -586,7 +590,7 @@
         radarGroup.visible = true
         if (!radarMeshArray.length){
             scene.add(radarGroup);
-            radarGroup.position.set(0, 0.5, 0);
+            radarGroup.position.set(0, 0.4, 0);
             for (let k = 0; k < 6; k++){
                 for (let i = 0; i< radarVertexArray.length; i++){
                     const boxMat = new THREE.MeshBasicMaterial({color: 0xffffff, depthTest: false});
@@ -642,7 +646,7 @@
         otherCar01.userData['otherCar02Tween'] && otherCar01.userData['otherCar02Tween'].kill();
 
         gsap.to(loadMap['roadMesh'].material.map.offset,{
-            y:loadMap['roadMesh'].material.map.offset.y - 1,
+            x:loadMap['roadMesh'].material.map.offset.x - 1,
             duration: 3,
             repeat: -1,
             ease: 'none'
@@ -650,14 +654,14 @@
 
         otherCar01.position.copy(otherCar01.userData['originPos']);
         otherCar01.userData['otherCar01Tween'] = gsap.to(otherCar01.position,{
-            z: 20,
+            x: 20,
             duration: 9,
             repeat: -1
         })
 
         otherCar02.position.copy(otherCar02.userData['originPos']);
         otherCar01.userData['otherCar02Tween'] = gsap.to(otherCar02.position,{
-            z: -20,
+            x: -20,
             duration: 10,
             repeat: -1
         })
@@ -689,10 +693,10 @@
     let meshScale = 0;
     let temp = 1.5
     function renderLoop(){
-        if (groundLoader){
+        if (groundLoader && buttonSelect !== buttonMap.radar){
             groundLoader.visible = false;
             cubeCamera.position.copy(camera.position);
-            cubeCamera.position.y *= 1;
+            cubeCamera.position.y *= -1;
             cubeCamera.update(renderer,scene);
             groundLoader.visible = true;
         }
