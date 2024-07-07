@@ -91,11 +91,6 @@
     const camera = new THREE.PerspectiveCamera( fovDefault, window.innerWidth / window.innerHeight, 0.1, 500 );
     camera.position.set( 1.53,  3.78, -1.46);
 
-    // const gui = new GUI()
-    // gui.add(camera.position, 'x', -10, 10)
-    // gui.add(camera.position, 'y', -10, 10)
-    // gui.add(camera.position, 'z', -10, 10)
-
     scene.background = new THREE.Color( 0x000000 );
     scene.fog = new THREE.Fog( 0x000000, 4, 40 );
 
@@ -110,9 +105,14 @@
 
     window.addEventListener('resize', onWindowResized);
 
-    // cubeRenderTarget = new THREE.WebGLCubeRenderTarget(1024);
-    // cubeRenderTarget.texture.type = THREE.HalfFloatType;
-    // cubeCamera = new THREE.CubeCamera(0.1, 200, cubeRenderTarget);
+    cubeRenderTarget = new THREE.WebGLCubeRenderTarget(1024);
+    cubeRenderTarget.texture.type = THREE.HalfFloatType;
+    cubeCamera = new THREE.CubeCamera(0.1, 200, cubeRenderTarget);
+
+    // const gui = new GUI()
+    // gui.add(cubeCamera.position, 'x', -10, 10)
+    // gui.add(cubeCamera.position, 'y', -10, 10)
+    // gui.add(cubeCamera.position, 'z', -10, 10)
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target = new THREE.Vector3(0, 1, 0);
@@ -150,7 +150,7 @@
 
         initHemisphereLight();
         initLight();
-        initGrid();
+        // initGrid();
 
         buttOnClick();
 
@@ -205,23 +205,35 @@
             },
             'carLoad': (gltf)=>{
                 gltf.scene.traverse((child)=>{
-                    if(child.name === 'radar' || child.name === '车身'){
+                    if(child.name === 'radar'){
                         nameToMeshDic[child.name] = child
                     }
-                    // if (child.type === 'Meth'){
-                    //     child.material.envMap = cubeRenderTarget.texture;
-                    //     child.material.envMapIntensity = 2;
-                    //     child.castShadow = true;
-                    //     child.receiveShadow = true;
-                    // }
-                    // child.traverse((item)=>{
-                    //     if (item.type === 'Mesh'){
-                    //         item.material.envMapIntensity = 5
-                    //     }
-                    // })
-
+                    if (child.name === 'topLigt'){
+                        child.visible = false
+                    }
+                    if (child.name === '平面'){
+                        // child.visible = false
+                        child.material.envMap = cubeRenderTarget.texture;
+                        groundLoader = child
+                    }
+                        if (child.name === 'Sketchfab_model'){
+                            // child.visible = false
+                        }
+                        if (child.name === 'Object_18'){
+                            // child.material.envMap = cubeRenderTarget.texture;
+                            // child.material.envMapIntensity = 5;
+                            // child.castShadow = true;
+                            // child.receiveShadow = true;
+                        }
+                    if (child.type === 'Mesh'){
+                        // child.material.envMap = cubeRenderTarget.texture;
+                        // child.material.envMapIntensity = 5;
+                        // child.castShadow = true;
+                        // child.receiveShadow = true;
+                    }
 
                 })
+
                 const animations = gltf.animations;
                 if (animations && animations.length){
                     mixer = new THREE.AnimationMixer(gltf.scene);
@@ -285,9 +297,9 @@
             loading_con.classList.add("display-none")
         });
         gsap.to(camera.position,{
-            x: 3.99,
-            y: 0.55,
-            z: 0,
+            x: -0.25,
+            y: 1,
+            z: -3.49,
             duration: 1,
             ease: 'power5.inOut'
         })
@@ -379,9 +391,9 @@
             nameToMeshDic['cameraOutRadar'] && nameToMeshDic['cameraOutRadar'].kill()
             nameToMeshDic['controlsTween'] && nameToMeshDic['controlsTween'].kill()
             nameToMeshDic['cameraToRadar'] = gsap.to(camera.position,{
-                x: 0.01,
-                y: 4.17,
-                z: -2.44,
+                x:  -3.74,
+                y: 5.68,
+                z: -0.10,
                 duration: 1
             })
             nameToMeshDic['controlsTween'] = gsap.to(controls,{
@@ -440,12 +452,22 @@
                 const carCurve = nameToMeshDic['carCurve']
                 loadMap['cubeGround'].visible = false
 
+                nameToMeshDic['cameraTween'] && nameToMeshDic['cameraTween'].kill()
                 carCurve.userData['carCurveOpacityTween'] && carCurve.userData['carCurveOpacityTween'].kill()
                 carCurve.userData['carCurveOpacityTween'] = gsap.to(carCurve.material, {
                     opacity: 1,
                     repeat: 0,
                     duration: 4,
                     ease: 'none',
+                });
+                nameToMeshDic['cameraTween'] = gsap.to(camera, {
+                    fov: fovTarget,
+                    duration: 1,
+                    repeat: 0,
+                    ease: 'power5.inOut',
+                    onUpdate: () => {
+                        camera.updateProjectionMatrix();
+                    }
                 });
             }
         }
@@ -485,14 +507,26 @@
 
             if (buttonSelect === buttonMap.body){
                 const carCurve = nameToMeshDic['carCurve']
-                loadMap['cubeGround'].visible = true
 
+                nameToMeshDic['cameraTween'] && nameToMeshDic['cameraTween'].kill()
                 carCurve.userData['carCurveOpacityTween'] && carCurve.userData['carCurveOpacityTween'].kill()
                 carCurve.userData['carCurveOpacityTween'] = gsap.to(carCurve.material, {
                     opacity: 0,
                     repeat: 0,
                     duration: 1,
-                    ease: 'none'
+                    ease: 'none',
+                    onComplete:()=>{
+                        loadMap['cubeGround'].visible = true
+                    }
+                });
+                nameToMeshDic['cameraTween'] = gsap.to(camera, {
+                    fov: fovDefault,
+                    duration: 1,
+                    repeat: 0,
+                    ease: 'power5.inOut',
+                    onUpdate: () => {
+                        camera.updateProjectionMatrix();
+                    }
                 });
             }
         }
@@ -523,9 +557,9 @@
         loadMap['cubeGround'].visible = false
         radarGroup.visible = false
         nameToMeshDic['cameraOutRadar'] = gsap.to(camera.position,{
-            x: 3.99,
-            y: 0.55,
-            z: 0,
+            x: -0.25,
+            y: 1,
+            z: -3.49,
             duration: 1
         })
         nameToMeshDic['controlsTween'] = gsap.to(controls,{
@@ -655,13 +689,13 @@
     let meshScale = 0;
     let temp = 1.5
     function renderLoop(){
-        // if (groundLoader){
-        //     groundLoader.visible = false;
-        //     cubeCamera.position.copy(camera.position);
-        //     cubeCamera.position.y *= -1;
-        //     cubeCamera.update(renderer,scene);
-        //     groundLoader.visible = true;
-        // }
+        if (groundLoader){
+            groundLoader.visible = false;
+            cubeCamera.position.copy(camera.position);
+            cubeCamera.position.y *= 1;
+            cubeCamera.update(renderer,scene);
+            groundLoader.visible = true;
+        }
 
         renderer.setSize( window.innerWidth, window.innerHeight );
         if (mixer && (isRadar || runTunnel)) {

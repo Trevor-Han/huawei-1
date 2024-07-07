@@ -1,6 +1,7 @@
 import { GLTFLoader }  from './GLTFLoader.js';
 import { RGBELoader } from './RGBELoader.js';
 import {TextureLoader} from '../3d/three.module.js'
+import {MeshoptDecoder} from './meshopt_decoder.module.js'
 
 export default class Loader {
     constructor(){
@@ -38,6 +39,9 @@ export default class Loader {
                 break
             case 'RGBE':
                 loader = this.rgbeLoader
+                break
+            case 'MESH':
+                loader = this.gltfLoader.setMeshoptDecoder(MeshoptDecoder)
                 break
             default:
                 loader = this.textureLoader
