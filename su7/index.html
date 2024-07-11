@@ -54,7 +54,13 @@
     import { OrbitControls }  from './js/3d/OrbitControls.js';
     import resources from "./js/config/resources.js";
     import Loader from './js/loaders/loadResource.js'
+    import CameraShake from  './js/config/CameraShake.js'
+    import DynamicEnv from  './js/config/DynamicEnv.js'
+    import {vertexShader as vertexShaderSeep } from "./js/shaders/seep/vertex.js";
+    import {fragmentShader as fragmentShaderSeep } from "./js/shaders/seep/fragment.js";
 
+    const width = window.innerWidth;
+    const height = window.innerHeight;
     const loader = new Loader()
     const buttonMap = {
         tunnel: '1',
@@ -76,37 +82,51 @@
 
     let fovDefault = 60;
     let fovTarget = 75;
+    let curWheelRot = 0;
+    let wheelRotSpeed = 0.4;
+    let uSeep = 0.0;
     let buttonSelect = buttonMap.tunnel
-    let mixer,mixer_other;
     let isLandscapeScreen = false;
     let isIntoScene = false;
     let isRadar = false;
     let runTunnel = false;
+    let isMouseDown = false;
     let nameToMeshDic = {};
     let loadMap = {};
-    let hemisphereLight, dLight, groundLoader, cubeRenderTarget, cubeCamera;
-    let loadIndex = 0;
+    let  groundLoader, cubeRenderTarget, cubeCamera;
 
+    const wheel = {
+        wheel_back_right: null,
+        wheel_back_left: null,
+        wheel_front_right: null,
+        wheel_front_left: null
+    }
 
-    const camera = new THREE.PerspectiveCamera( fovDefault, window.innerWidth / window.innerHeight, 0.1, 500 );
-    camera.position.set( 1.53,  3.78, -1.46);
+    const camera = new THREE.PerspectiveCamera( fovTarget, width / height, 0.1, 500 );
+    camera.position.set( -0.1072,  1, -3.4973);
+    camera.uIntensity = 0
 
     scene.background = new THREE.Color( 0x000000 );
     scene.fog = new THREE.Fog( 0x000000, 4, 40 );
 
 
+    const renderTarget = new THREE.WebGLRenderTarget(width, height);
+
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize( width, height );
     renderer.setAnimationLoop(renderLoop);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1;
     $('.su7-con').append( renderer.domElement );
 
 
     window.addEventListener('resize', onWindowResized);
 
     cubeRenderTarget = new THREE.WebGLCubeRenderTarget(1024);
-    cubeRenderTarget.texture.type = THREE.HalfFloatType;
+    cubeRenderTarget.texture.type = THREE.UnsignedByteType;
     cubeCamera = new THREE.CubeCamera(0.1, 200, cubeRenderTarget);
 
     // const gui = new GUI()
@@ -124,17 +144,24 @@
 
     controls.enablePan = false;
 
-    controls.maxDistance = 3.5;
-    controls.minDistance = 3.5;
+    controls.maxDistance = 3;
+    controls.minDistance = 3;
 
     controls.minPolarAngle = 0.1;
     controls.maxPolarAngle = Math.PI / 2;
+
+    const cameraShake = new CameraShake();
+    cameraShake.setIntensity(0);
+    camera.cameraShakeIntensity = 0
+
+    let envmap1,envmap2;
+    let dynamicEnv
 
     loader.load(resources)
 
     loader.onFileLoaded((name,res) => {
         const result = loaderCustom(name)(res)
-        if (name !== 'sceneLoad'){
+        if (!['sceneLoad','env_night','env_light'].includes(name)){
             scene.add(result)
         }
         loadMap[name] = result
@@ -148,135 +175,44 @@
         loadMap['otherCarLoad'].visible = false
         loadMap['cubeGround'].visible = false
 
-        initHemisphereLight();
-        initLight();
-        // initGrid();
-
         buttOnClick();
 
         setTimeout(()=>{
+            if (envmap1 && envmap1){
+                dynamicEnv = new DynamicEnv(renderer,{
+                    envmap1,
+                    envmap2,
+                });
+                scene.background = dynamicEnv.envMap;
+                scene.environment = dynamicEnv.envMap;
+                dynamicEnv.setWeight(1);
+            }
+
             intoScene()
         },1000)
-
-        // cubeBoxGeometry()
     })
 
-    function loaderCustom(type){
-        const StrategyMap = {
-            'sceneLoad': (texture)=>{
-                    scene.background = texture;
-                    scene.environment = texture;
-                    texture.mapping = THREE.EquirectangularReflectionMapping;
-                },
-            'roadMesh': (banMa)=>{
-                banMa.wrapS = THREE.RepeatWrapping;
-                banMa.wrapT = THREE.RepeatWrapping;
-                banMa.repeat.set(1, 6);
+    function intoScene(){
+        const loading_complete = document.querySelector('.loading-complete')
+        const loading_con = document.querySelector('.loading-con')
+        loading_complete.classList.remove("display-none");
+        loading_con.classList.add("hide-loading");
 
-                const PlaneGeometry =  new THREE.PlaneGeometry(100,15)
-                const MeshStandardMaterial =  new THREE.MeshStandardMaterial({
-                    map:banMa,
-                    color: '#343434'
-                })
-                const roadMesh = new THREE.Mesh(
-                    PlaneGeometry,
-                    MeshStandardMaterial
-                )
-                roadMesh.rotation.x = - Math.PI / 2;
-                roadMesh.position.y = -0.1;
-                return roadMesh
-            } ,
-            'otherCarLoad': (gltf)=>{
-                gltf.scene.traverse((child)=>{
-                    if (['otherCar01','otherCar02'].includes(child.name)){
-                        nameToMeshDic[child.name] = child
-                        child.userData['originPos'] = child.position.clone();
-                    }
-                })
-                const animations = gltf.animations;
-                if (animations && animations.length){
-                    mixer_other = new THREE.AnimationMixer(gltf.scene);
-                    for (let i = 0; i< animations.length; i++){
-                        const action = mixer_other.clipAction(animations[i]);
-                        action.play();
-                    }
-                }
-                return gltf.scene
-            },
-            'carLoad': (gltf)=>{
-                gltf.scene.traverse((child)=>{
-                    if(child.name === 'radar'){
-                        nameToMeshDic[child.name] = child
-                    }
-                    if (child.name === 'topLigt'){
-                        child.visible = false
-                    }
-                    if(['Object_40','Object_36','Object_21','Object_49','Object_53'].includes(child.name)){
-                        child.visible = false
-                    }
-                    if (child.name === '平面'){
-                        // child.visible = false
-                        child.material.envMap = cubeRenderTarget.texture;
-                        groundLoader = child
-                    }
-                        if (child.name === 'Sketchfab_model'){
-                            // child.visible = false
-                        }
-                        if (child.name === 'Object_18'){
-                            // child.material.envMap = cubeRenderTarget.texture;
-                            // child.material.envMapIntensity = 5;
-                            // child.castShadow = true;
-                            // child.receiveShadow = true;
-                        }
-                    if (child.type === 'Mesh'){
-                        child.material.envMap = cubeRenderTarget.texture;
-                        child.material.envMapIntensity = 5;
-                        child.castShadow = true;
-                        child.receiveShadow = true;
-                    }
+        loading_con.addEventListener('animationend', function() {
+            loading_con.classList.add("display-none")
+        });
+        gsap.to(camera,{
+            fov: fovDefault,
+            uIntensity: 1,
+            duration: 2,
+            ease: 'power2.out',
+            onUpdate:()=>{
+                dynamicEnv.setIntensity(camera.uIntensity)
+                nameToMeshDic['topLigt'].material.emissiveIntensity = camera.uIntensity
+                camera.updateProjectionMatrix();
+            }
+        })
 
-                })
-
-                const animations = gltf.animations;
-                if (animations && animations.length){
-                    mixer = new THREE.AnimationMixer(gltf.scene);
-                    for (let i = 0; i< animations.length; i++){
-                        const action = mixer.clipAction(animations[i]);
-                        action.play();
-                    }
-
-                }
-                return gltf.scene
-            },
-            'carCurveLoad': (gltf)=>{
-                gltf.scene.traverse((child)=>{
-                    nameToMeshDic['carCurve'] = child
-                    if (child.name === 'xiedu'){
-                        child.material.opacity = 0
-                    }
-
-                })
-                return gltf.scene
-            },
-            'cubeGround': (gltf)=>{
-                gltf.scene.traverse((child)=>{
-                    if (child.name === 'cubeGround'){
-                        nameToMeshDic[child.name] = child
-                    }
-                })
-                return gltf.scene
-            },
-            'tunnelLoader': (gltf)=>{
-                gltf.scene.traverse((child)=>{
-                    if (child.name === 'tunnel'){
-                        child.material.opacity = 0
-                    }
-                    nameToMeshDic['tunnel'] = child
-                })
-                return gltf.scene
-            },
-        }
-        return StrategyMap[type]
     }
 
     function updateLoadingProgress(progress,loading_text){
@@ -290,70 +226,8 @@
 
     }
 
-    function intoScene(){
-        const loading_complete = document.querySelector('.loading-complete')
-        const loading_con = document.querySelector('.loading-con')
-        loading_complete.classList.remove("display-none");
-        loading_con.classList.add("hide-loading");
-
-        loading_con.addEventListener('animationend', function() {
-            loading_con.classList.add("display-none")
-        });
-        gsap.to(camera.position,{
-            x: -0.25,
-            y: 1,
-            z: -3.49,
-            duration: 1,
-            ease: 'power5.inOut'
-        })
-
-    }
-
-    function cubeBoxGeometry(){
-        const cubeSize = 1
-        const cubeGeo = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-        const cubeMat = new THREE.MeshBasicMaterial({ color: '#5af62e' });
-        const mesh = new THREE.Mesh(cubeGeo, cubeMat);
-        mesh.castShadow = true // 投射阴影
-        mesh.receiveShadow = true // 接受阴影
-        mesh.position.y = 1;
-        scene.add(mesh);
-    }
-
-    function initHemisphereLight () {
-        hemisphereLight = new THREE.HemisphereLight( 0xffffff, 0x444444, 3 );
-        hemisphereLight.position.set( 0, 20, 0 );
-        scene.add( hemisphereLight );
 
 
-        const light =  new THREE.DirectionalLight(0xffffff,1);
-        light.position.set(0,0,10);
-        scene.add( light );
-
-        const light1 =  new THREE.DirectionalLight(0xffffff,1);
-        light.position.set(0,0,-10);
-        scene.add( light1 );
-
-    }
-
-    function initLight(){
-        dLight = new THREE.DirectionalLight( '#ffffff', 4 );
-        dLight.position.set( 0, 5, -5 );
-        dLight.castShadow = true;
-        dLight.shadow.camera.top = 2;
-        dLight.shadow.camera.bottom = - 2;
-        dLight.shadow.camera.left = - 2;
-        dLight.shadow.camera.right = 2;
-        scene.add( dLight );
-
-    }
-
-    function initGrid(){
-        const grid = new THREE.GridHelper( 40, 20, 0xdddddd, 0xdddddd );
-        grid.material.opacity = 0.2;
-        grid.material.transparent = true;
-        scene.add( grid )
-    }
 
     function buttOnClick(){
         const tunnel = document.getElementById('tunnel');
@@ -415,6 +289,186 @@
         }
     }
 
+    function carWheelForward(){
+        const car = nameToMeshDic['car']
+        carWheelToGsap(car,'wheel_front_left')
+        carWheelToGsap(car,'wheel_front_right')
+        carWheelToGsap(car,'wheel_back_left')
+        carWheelToGsap(car,'wheel_back_right')
+    }
+
+    function carWheelStop(){
+        const car = nameToMeshDic['car']
+        carWheelStopGsap(car,'wheel_front_left')
+        carWheelStopGsap(car,'wheel_front_right')
+        carWheelStopGsap(car,'wheel_back_left')
+        carWheelStopGsap(car,'wheel_back_right')
+    }
+
+    function carWheelToGsap(car,type){
+        car.userData['tween_' + type] && car.userData['tween_' + type].kill()
+
+        car.userData['tween_' + type] = gsap.to(wheel[type].rotation, {
+            z: curWheelRot - 4 * Math.PI,
+            duration: 1,
+            ease: 'power1.in',
+            onUpdate: () => {
+                curWheelRot = wheel[type].rotation.z;
+            },
+            onComplete: () => {
+                car.userData['tween_' + type].kill()
+                car.userData['tween_' + type] = gsap.to(wheel[type].rotation, {
+                    z: curWheelRot - 2 * Math.PI,
+                    duration: wheelRotSpeed,
+                    repeat: -1,
+                    ease: 'none',
+                });
+            }
+        });
+
+    }
+
+    function carWheelStopGsap(car,type){
+        car.userData['tween_' + type] && car.userData['tween_' + type].kill()
+
+        car.userData['tween_' + type] = gsap.to(wheel[type].rotation, {
+            z: curWheelRot - 4 * Math.PI,
+            duration: 2.0,
+            ease: 'circ.out',
+            onUpdate: () => {
+                curWheelRot = wheel[type].rotation.z;
+            },
+            onComplete: () => {
+                car.userData['tween_' + type].kill();
+            }
+        });
+
+    }
+
+    function loaderCustom(type){
+        const StrategyMap = {
+            'sceneLoad': (texture)=>{
+                // scene.background = texture;
+                // scene.environment = texture;
+                // texture.mapping = THREE.EquirectangularReflectionMapping;
+            },
+            'env_night':(texture) =>{
+                envmap1 = texture
+            },
+            'env_light':(texture) =>{
+                envmap2 = texture
+            },
+            'roadMesh': (banMa)=>{
+                banMa.wrapS = THREE.RepeatWrapping;
+                banMa.wrapT = THREE.RepeatWrapping;
+                banMa.repeat.set(1, 6);
+
+                const PlaneGeometry =  new THREE.PlaneGeometry(100,15)
+                const MeshStandardMaterial =  new THREE.MeshStandardMaterial({
+                    map:banMa,
+                    color: '#343434'
+                })
+                const roadMesh = new THREE.Mesh(
+                    PlaneGeometry,
+                    MeshStandardMaterial
+                )
+                roadMesh.rotation.x = - Math.PI / 2;
+                roadMesh.position.y = -0.1;
+                return roadMesh
+            } ,
+            'otherCarLoad': (gltf)=>{
+                gltf.scene.traverse((child)=>{
+                    if (['otherCar01','otherCar02'].includes(child.name)){
+                        nameToMeshDic[child.name] = child
+                        child.userData['originPos'] = child.position.clone();
+                    }
+                })
+                return gltf.scene
+            },
+            'carLoad': (gltf)=>{
+                nameToMeshDic['car'] = gltf.scene
+                gltf.scene.traverse((child)=>{
+                    if (['topLigt','radar','empennage'].includes(child.name)){
+                        nameToMeshDic[child.name] = child
+                    }
+                    if (child.name === 'topLigt'){
+                        child.material.emissiveIntensity = 0
+                    }
+                    if(['wheel_back_right','wheel_back_left','wheel_front_right','wheel_front_left'].includes(child.name)){
+                        wheel[child.name] = child
+                    }
+
+                    if (child.name === '平面'){
+                        child.material.envMap = cubeRenderTarget.texture;
+                        child.material.normalMap = new THREE.TextureLoader().load('./img/t_floor_normal.webp')
+                        child.material.roughnessMap = new THREE.TextureLoader().load('./img/t_floor_roughness.webp')
+
+                        child.material.normalMap.flipY = false
+                        child.material.normalMap.colorSpace = THREE.LinearSRGBColorSpace
+                        child.material.normalMap.wrapS = THREE.RepeatWrapping
+                        child.material.normalMap.wrapS = THREE.RepeatWrapping
+
+                        child.material.roughnessMap.flipY = false
+                        child.material.roughnessMap.colorSpace = THREE.LinearSRGBColorSpace
+                        child.material.roughnessMap.wrapS = THREE.RepeatWrapping
+                        child.material.roughnessMap.wrapS = THREE.RepeatWrapping
+
+                        groundLoader = child
+                    }
+
+                    if (child.type === 'Mesh'){
+                        child.material.envMap = cubeRenderTarget.texture;
+                        child.material.envMapIntensity = 5;
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+
+                })
+                return gltf.scene
+            },
+            'carCurveLoad': (gltf)=>{
+                gltf.scene.traverse((child)=>{
+                    nameToMeshDic['carCurve'] = child
+                    if (child.name === 'xiedu'){
+                        child.material.opacity = 0
+                    }
+
+                })
+                return gltf.scene
+            },
+            'cubeGround': (gltf)=>{
+                gltf.scene.traverse((child)=>{
+                    if (child.name === 'cubeGround'){
+                        nameToMeshDic[child.name] = child
+                    }
+                })
+                return gltf.scene
+            },
+            'tunnelLoader': (gltf)=>{
+                gltf.scene.traverse((child)=>{
+                    nameToMeshDic['tunnel'] = child
+                    if (child.type === 'Mesh'){
+                        // child.material.opacity = 0
+                        child.material = new THREE.ShaderMaterial({
+                            transparent: true,
+                            side: THREE.DoubleSide,
+                            vertexShader:vertexShaderSeep,
+                            fragmentShader: fragmentShaderSeep,
+                            uniforms: {
+                                uOpacity: { value: 0.0 },
+                                uSpeed: {value:  0.0 },
+                                iTime: {value:  0.0 },
+                            },
+                        });
+                        nameToMeshDic['tunnelOpacity'] = child
+                    }
+                })
+                return gltf.scene
+            },
+        }
+        return StrategyMap[type]
+    }
+
     window.addEventListener('mousedown',(e)=>{
         if (!(e.target instanceof HTMLCanvasElement)){
             return
@@ -422,35 +476,68 @@
         if (e.button === 0) {
             if (buttonSelect === buttonMap.tunnel){
                 const tunnel = nameToMeshDic['tunnel']
+                const car = nameToMeshDic['car']
 
                 runTunnel = true
+                isMouseDown = true
+                nameToMeshDic['topLigt'].visible = false
+                nameToMeshDic['topLigt'].material.emissiveIntensity = 0
+                nameToMeshDic['tunnelOpacity'].material.uniforms.iTime.value = 0.0
+
                 nameToMeshDic['cameraTween'] && nameToMeshDic['cameraTween'].kill()
+                nameToMeshDic['cameraShakeTween'] && nameToMeshDic['cameraShakeTween'].kill()
                 tunnel.userData['tunnelTween'] && tunnel.userData['tunnelTween'].kill()
-                tunnel.userData['tunnelOpacityTween'] && tunnel.userData['tunnelOpacityTween'].kill()
+                car.userData['empennagePosTween'] &&  car.userData['empennagePosTween'].kill()
+                car.userData['empennageRosTween'] &&  car.userData['empennageRosTween'].kill()
 
                 nameToMeshDic['cameraTween'] = gsap.to(camera, {
                     fov: fovTarget,
-                    duration: 1,
+                    cameraShakeIntensity: 1,
+                    duration: 2,
                     repeat: 0,
                     ease: 'power5.inOut',
                     onUpdate: () => {
                         camera.updateProjectionMatrix();
                     }
                 });
-
-                tunnel.userData['tunnelTween'] = gsap.to(tunnel.material.map.offset,{
-                    x: tunnel.material.map.offset.x + 1,
-                    duration: 2,
+                nameToMeshDic['cameraShakeTween'] = gsap.to(camera, {
+                    cameraShakeIntensity: 1,
+                    duration:4,
                     repeat: -1,
-                    ease: 'none'
+                    ease: "power2.out",
+                    onUpdate:()=>{
+                        camera.position.add(cameraShake.tweenedPosOffset);
+                        cameraShake.setIntensity(camera.cameraShakeIntensity);
+                        cameraShake.update();
+                    }
+                });
+
+                tunnel.userData['tunnelTween'] = gsap.to(tunnel.material,{
+                    opacity: 1,
+                    duration: 3,
+                    repeat: 0,
+                    ease: "power2.out",
+                    onUpdate: () => {
+                        dynamicEnv.setIntensity(1 - tunnel.material.opacity)
+                        uSeep = tunnel.material.opacity / 10
+                        nameToMeshDic['tunnelOpacity'].material.uniforms.uOpacity.value = tunnel.material.opacity
+                    }
                 })
 
-                tunnel.userData['tunnelOpacityTween'] = gsap.to(tunnel.material, {
-                    opacity: 1,
+                car.userData['empennagePosTween'] = gsap.to(nameToMeshDic['empennage'].position,{
+                    x: -0.42,
+                    y: 236.14,
+                    z: -107.97,
                     duration: 2,
                     repeat: 0,
-                    ease: 'none'
-                });
+                })
+                car.userData['empennageRosTween'] = gsap.to(nameToMeshDic['empennage'].rotation,{
+                    x: -0.189,
+                    repeat: 0,
+                    duration: 2,
+                })
+
+                carWheelForward()
             }
             if (buttonSelect === buttonMap.body) {
                 const carCurve = nameToMeshDic['carCurve']
@@ -484,29 +571,56 @@
         if (e.button === 0){
             if (buttonSelect === buttonMap.tunnel){
                 const tunnel = nameToMeshDic['tunnel']
+                const car = nameToMeshDic['car']
 
                 runTunnel = false
                 nameToMeshDic['cameraTween'] && nameToMeshDic['cameraTween'].kill()
-                tunnel.userData['tunnelOpacityTween'] && tunnel.userData['tunnelOpacityTween'].kill()
+                nameToMeshDic['cameraShakeTween'] && nameToMeshDic['cameraShakeTween'].kill()
+                car.userData['empennagePosTween'] &&  car.userData['empennagePosTween'].kill()
+                car.userData['empennageRosTween'] &&  car.userData['empennageRosTween'].kill()
+                tunnel.userData['tunnelTween'] &&  tunnel.userData['tunnelTween'].kill()
 
                 nameToMeshDic['cameraTween'] = gsap.to(camera, {
                     fov: fovDefault,
-                    duration: 1,
+                    duration: 2,
                     repeat: 0,
                     ease: 'power5.inOut',
                     onUpdate: () => {
                         camera.updateProjectionMatrix();
                     }
                 });
-                tunnel.userData['tunnelOpacityTween'] = gsap.to(tunnel.material, {
+                tunnel.userData['tunnelTween'] = gsap.to(tunnel.material, {
                     opacity: 0,
                     repeat: 0,
                     duration: 1,
                     ease: 'none',
-                    onComplete: () => {
-                        tunnel.userData['tunnelTween'] && tunnel.userData['tunnelTween'].kill()
+                    onUpdate: () =>{
+                        if (tunnel.material.opacity < 0.5){
+                            nameToMeshDic['topLigt'].visible = true
+                            nameToMeshDic['topLigt'].material.emissiveIntensity = 1 - tunnel.material.opacity
+                        }
+                        dynamicEnv.setIntensity(1 - tunnel.material.opacity)
+                        uSeep = tunnel.material.opacity / 10
+                        nameToMeshDic['tunnelOpacity'].material.uniforms.uOpacity.value = tunnel.material.opacity
+                    },
+                    onComplete: ()=>{
+                        isMouseDown = false
                     }
                 });
+                car.userData['empennagePosTween'] = gsap.to(nameToMeshDic['empennage'].position,{
+                    x: 0.735,
+                    y: 230.15,
+                    z: -97.55,
+                    duration: 2,
+                    repeat: 0,
+                })
+                car.userData['empennageRosTween'] = gsap.to(nameToMeshDic['empennage'].rotation,{
+                    x: 0,
+                    repeat: 0,
+                    duration: 2,
+                })
+
+                carWheelStop()
             }
 
             if (buttonSelect === buttonMap.body){
@@ -693,7 +807,7 @@
     let meshScale = 0;
     let temp = 1.5
     function renderLoop(){
-        if (groundLoader && buttonSelect !== buttonMap.radar){
+        if (groundLoader){
             groundLoader.visible = false;
             cubeCamera.position.copy(camera.position);
             cubeCamera.position.y *= -1;
@@ -701,9 +815,8 @@
             groundLoader.visible = true;
         }
 
-        renderer.setSize( window.innerWidth, window.innerHeight );
-        if (mixer && (isRadar || runTunnel)) {
-            mixer.update(clock.getDelta());
+        if ( nameToMeshDic['tunnelOpacity'] && isMouseDown){
+            nameToMeshDic['tunnelOpacity'].material.uniforms.iTime.value+= uSeep
         }
 
         for (let i = 0; i < radarMeshArray.length; i++){
