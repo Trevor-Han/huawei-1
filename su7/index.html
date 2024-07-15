@@ -183,9 +183,9 @@
                     envmap1,
                     envmap2,
                 });
-                scene.background = dynamicEnv.envMap;
+                // scene.background = dynamicEnv.envMap;
                 scene.environment = dynamicEnv.envMap;
-                dynamicEnv.setWeight(1);
+                dynamicEnv.setWeight(0);
             }
 
             intoScene()
@@ -201,15 +201,25 @@
         loading_con.addEventListener('animationend', function() {
             loading_con.classList.add("display-none")
         });
-        gsap.to(camera,{
+         nameToMeshDic['cameraFovTween'] = gsap.to(camera,{
             fov: fovDefault,
             uIntensity: 1,
-            duration: 2,
+            duration: 4,
             ease: 'power2.out',
             onUpdate:()=>{
                 dynamicEnv.setIntensity(camera.uIntensity)
+                dynamicEnv.setWeight(camera.uIntensity)
                 nameToMeshDic['topLigt'].material.emissiveIntensity = camera.uIntensity
                 camera.updateProjectionMatrix();
+            }
+        })
+         nameToMeshDic['cameraDynTween'] = gsap.to(camera,{
+            fov: fovDefault,
+            uIntensity: 1,
+            duration: 7,
+            onUpdate:()=>{
+                dynamicEnv.setIntensity(camera.uIntensity)
+                dynamicEnv.setWeight(camera.uIntensity)
             }
         })
 
@@ -417,8 +427,10 @@
                     }
 
                     if (child.type === 'Mesh'){
-                        child.material.envMap = cubeRenderTarget.texture;
-                        child.material.envMapIntensity = 5;
+                        // child.material.envMap = cubeRenderTarget.texture;
+                        if (child.name !== '平面'){
+                            child.material.envMapIntensity = 15;
+                        }
                         child.castShadow = true;
                         child.receiveShadow = true;
                     }
@@ -478,13 +490,25 @@
                 const tunnel = nameToMeshDic['tunnel']
                 const car = nameToMeshDic['car']
 
+                setTimeout(()=>{
+                    car.traverse(child=>{
+                        if (child.isMesh){
+                            child.material.envMap = cubeRenderTarget.texture
+                        }
+                    })
+                },100)
+
+
                 runTunnel = true
                 isMouseDown = true
                 nameToMeshDic['topLigt'].visible = false
                 nameToMeshDic['topLigt'].material.emissiveIntensity = 0
                 nameToMeshDic['tunnelOpacity'].material.uniforms.iTime.value = 0.0
 
+
                 nameToMeshDic['cameraTween'] && nameToMeshDic['cameraTween'].kill()
+                nameToMeshDic['cameraFovTween'] && nameToMeshDic['cameraFovTween'].kill()
+                nameToMeshDic['cameraDynTween'] && nameToMeshDic['cameraDynTween'].kill()
                 nameToMeshDic['cameraShakeTween'] && nameToMeshDic['cameraShakeTween'].kill()
                 tunnel.userData['tunnelTween'] && tunnel.userData['tunnelTween'].kill()
                 car.userData['empennagePosTween'] &&  car.userData['empennagePosTween'].kill()
@@ -572,6 +596,15 @@
             if (buttonSelect === buttonMap.tunnel){
                 const tunnel = nameToMeshDic['tunnel']
                 const car = nameToMeshDic['car']
+
+
+                setTimeout(()=>{
+                    car.traverse(child=>{
+                        if (child.isMesh && child.name !== '平面'){
+                            child.material.envMap = null
+                        }
+                    })
+                },100)
 
                 runTunnel = false
                 nameToMeshDic['cameraTween'] && nameToMeshDic['cameraTween'].kill()
