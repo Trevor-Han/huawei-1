@@ -91,6 +91,7 @@
     let isRadar = false;
     let runTunnel = false;
     let isMouseDown = false;
+    let isCarRunning = false;
     let nameToMeshDic = {};
     let loadMap = {};
     let  groundLoader, cubeRenderTarget, cubeCamera;
@@ -118,7 +119,7 @@
     renderer.setAnimationLoop(renderLoop);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    // renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1;
     $('.su7-con').append( renderer.domElement );
 
@@ -233,125 +234,6 @@
         const progress = document.querySelector('.progress')
 
         updateLoadingProgress(progress, text)
-
-    }
-
-
-
-
-    function buttOnClick(){
-        const tunnel = document.getElementById('tunnel');
-        const carBody = document.getElementById('car-body');
-        const windDrag = document.getElementById('wind-drag');
-        const radar = document.getElementById('radar');
-        tunnel.onclick = function (){
-            recoverState()
-            buttonSelect = buttonMap.tunnel
-        }
-        carBody.onclick = function (){
-            recoverState()
-            buttonSelect = buttonMap.body
-            const carCurve = nameToMeshDic['carCurve']
-            loadMap['cubeGround'].visible = true
-
-            gsap.to(carCurve.material.map.offset,{
-                y: -2,
-                duration: fovDefault,
-                repeat: -1,
-                ease: 'none'
-            })
-        }
-        windDrag.onclick = function (){
-            recoverState()
-            buttonSelect = buttonMap.windDrag
-
-        }
-
-        radar.onclick = function (){
-            recoverState()
-            buttonSelect = buttonMap.radar
-            isRadar = true;
-            loadMap['roadMesh'].visible = true
-            loadMap['otherCarLoad'].visible = true
-            radarGroup.visible = true
-            groundLoader.visible = false
-
-            nameToMeshDic['cameraOutRadar'] && nameToMeshDic['cameraOutRadar'].kill()
-            nameToMeshDic['controlsTween'] && nameToMeshDic['controlsTween'].kill()
-            nameToMeshDic['cameraToRadar'] = gsap.to(camera.position,{
-                x:  -3.74,
-                y: 5.68,
-                z: -0.10,
-                duration: 1
-            })
-            nameToMeshDic['controlsTween'] = gsap.to(controls,{
-                maxDistance: 6,
-                minDistance: 6,
-                duration: 1,
-                repeat: 0,
-                ease: 'none',
-                onUpdate: () => {
-                    camera.updateProjectionMatrix();
-                }
-            })
-            setRadarMesh();
-            setOtherCar();
-        }
-    }
-
-    function carWheelForward(){
-        const car = nameToMeshDic['car']
-        carWheelToGsap(car,'wheel_front_left')
-        carWheelToGsap(car,'wheel_front_right')
-        carWheelToGsap(car,'wheel_back_left')
-        carWheelToGsap(car,'wheel_back_right')
-    }
-
-    function carWheelStop(){
-        const car = nameToMeshDic['car']
-        carWheelStopGsap(car,'wheel_front_left')
-        carWheelStopGsap(car,'wheel_front_right')
-        carWheelStopGsap(car,'wheel_back_left')
-        carWheelStopGsap(car,'wheel_back_right')
-    }
-
-    function carWheelToGsap(car,type){
-        car.userData['tween_' + type] && car.userData['tween_' + type].kill()
-
-        car.userData['tween_' + type] = gsap.to(wheel[type].rotation, {
-            z: curWheelRot - 4 * Math.PI,
-            duration: 1,
-            ease: 'power1.in',
-            onUpdate: () => {
-                curWheelRot = wheel[type].rotation.z;
-            },
-            onComplete: () => {
-                car.userData['tween_' + type].kill()
-                car.userData['tween_' + type] = gsap.to(wheel[type].rotation, {
-                    z: curWheelRot - 2 * Math.PI,
-                    duration: wheelRotSpeed,
-                    repeat: -1,
-                    ease: 'none',
-                });
-            }
-        });
-
-    }
-
-    function carWheelStopGsap(car,type){
-        car.userData['tween_' + type] && car.userData['tween_' + type].kill()
-
-        car.userData['tween_' + type] = gsap.to(wheel[type].rotation, {
-            z: curWheelRot - 4 * Math.PI,
-            duration: 2.0,
-            ease: 'circ.out',
-            onUpdate: () => {
-                curWheelRot = wheel[type].rotation.z;
-            },
-            onComplete: () => {
-                car.userData['tween_' + type].kill();
-            }
-        });
 
     }
 
@@ -481,6 +363,125 @@
         return StrategyMap[type]
     }
 
+    function carWheelForward(){
+        const car = nameToMeshDic['car']
+        carWheelToGsap(car,'wheel_front_left')
+        carWheelToGsap(car,'wheel_front_right')
+        carWheelToGsap(car,'wheel_back_left')
+        carWheelToGsap(car,'wheel_back_right')
+    }
+
+    function carWheelStop(){
+        const car = nameToMeshDic['car']
+        carWheelStopGsap(car,'wheel_front_left')
+        carWheelStopGsap(car,'wheel_front_right')
+        carWheelStopGsap(car,'wheel_back_left')
+        carWheelStopGsap(car,'wheel_back_right')
+    }
+
+    function carWheelToGsap(car,type){
+        car.userData['tween_' + type] && car.userData['tween_' + type].kill()
+
+        car.userData['tween_' + type] = gsap.to(wheel[type].rotation, {
+            z: curWheelRot - 4 * Math.PI,
+            duration: 1,
+            ease: 'power1.in',
+            onUpdate: () => {
+                curWheelRot = wheel[type].rotation.z;
+            },
+            onComplete: () => {
+                car.userData['tween_' + type].kill()
+                car.userData['tween_' + type] = gsap.to(wheel[type].rotation, {
+                    z: curWheelRot - 2 * Math.PI,
+                    duration: wheelRotSpeed,
+                    repeat: -1,
+                    ease: 'none',
+                });
+            }
+        });
+
+    }
+
+    function carWheelStopGsap(car,type){
+        car.userData['tween_' + type] && car.userData['tween_' + type].kill()
+
+        car.userData['tween_' + type] = gsap.to(wheel[type].rotation, {
+            z: curWheelRot - 4 * Math.PI,
+            duration: 2.0,
+            ease: 'circ.out',
+            onUpdate: () => {
+                curWheelRot = wheel[type].rotation.z;
+            },
+            onComplete: () => {
+                car.userData['tween_' + type].kill();
+            }
+        });
+
+    }
+
+    function buttOnClick(){
+        const tunnel = document.getElementById('tunnel');
+        const carBody = document.getElementById('car-body');
+        const windDrag = document.getElementById('wind-drag');
+        const radar = document.getElementById('radar');
+        tunnel.onclick = function (){
+            recoverState()
+            buttonSelect = buttonMap.tunnel
+        }
+        carBody.onclick = function (){
+            recoverState()
+            buttonSelect = buttonMap.body
+            const carCurve = nameToMeshDic['carCurve']
+            loadMap['cubeGround'].visible = true
+
+            gsap.to(carCurve.material.map.offset,{
+                y: -2,
+                duration: fovDefault,
+                repeat: -1,
+                ease: 'none'
+            })
+        }
+        windDrag.onclick = function (){
+            recoverState()
+            buttonSelect = buttonMap.windDrag
+
+        }
+
+        radar.onclick = function (){
+            recoverState()
+
+            buttonSelect = buttonMap.radar
+            isRadar = true;
+            loadMap['roadMesh'].visible = true
+            loadMap['otherCarLoad'].visible = true
+            nameToMeshDic['topLigt'].visible = false
+            radarGroup.visible = true
+            groundLoader.visible = false
+            isCarRunning = true
+
+            nameToMeshDic['cameraOutRadar'] && nameToMeshDic['cameraOutRadar'].kill()
+            nameToMeshDic['controlsTween'] && nameToMeshDic['controlsTween'].kill()
+            nameToMeshDic['cameraToRadar'] = gsap.to(camera.position,{
+                x:  -3.74,
+                y: 5.68,
+                z: -0.10,
+                duration: 1
+            })
+            nameToMeshDic['controlsTween'] = gsap.to(controls,{
+                maxDistance: 6,
+                minDistance: 6,
+                duration: 1,
+                repeat: 0,
+                ease: 'none',
+                onUpdate: () => {
+                    camera.updateProjectionMatrix();
+                }
+            })
+            carWheelForward()
+            setRadarMesh();
+            setOtherCar();
+        }
+    }
     window.addEventListener('mousedown',(e)=>{
         if (!(e.target instanceof HTMLCanvasElement)){
             return
@@ -501,6 +502,7 @@
 
                 runTunnel = true
                 isMouseDown = true
+                isCarRunning = true
                 nameToMeshDic['topLigt'].visible = false
                 nameToMeshDic['topLigt'].material.emissiveIntensity = 0
                 nameToMeshDic['tunnelOpacity'].material.uniforms.iTime.value = 0.0
@@ -607,6 +609,7 @@
                 },100)
 
                 runTunnel = false
+                isCarRunning = false
                 nameToMeshDic['cameraTween'] && nameToMeshDic['cameraTween'].kill()
                 nameToMeshDic['cameraShakeTween'] && nameToMeshDic['cameraShakeTween'].kill()
                 car.userData['empennagePosTween'] &&  car.userData['empennagePosTween'].kill()
@@ -706,6 +709,7 @@
         loadMap['roadMesh'].visible = false
         loadMap['otherCarLoad'].visible = false
         loadMap['cubeGround'].visible = false
+        nameToMeshDic['topLigt'].visible = true
         radarGroup.visible = false
         nameToMeshDic['cameraOutRadar'] = gsap.to(camera.position,{
             x: -0.25,
@@ -723,6 +727,10 @@
                 camera.updateProjectionMatrix();
             }
         })
+        if (isCarRunning){
+            carWheelStop()
+            isCarRunning = false
+        }
     }
     function setRadarMesh(){
         const child = nameToMeshDic['radar'];
@@ -740,7 +748,7 @@
             radarGroup.position.set(0, 0.4, 0);
             for (let k = 0; k < 6; k++){
                 for (let i = 0; i< radarVertexArray.length; i++){
-                    const boxMat = new THREE.MeshBasicMaterial({color: 0xffffff, depthTest: false});
+                    const boxMat = new THREE.MeshBasicMaterial({color: 0xffffff});
                     const boxMesh = new THREE.Mesh(boxGeo,boxMat);
                     boxMesh.position.copy(radarVertexArray[i]);
                     boxMesh.visible = false;
