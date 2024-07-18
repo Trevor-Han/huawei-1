@@ -55,6 +55,9 @@
     import resources from "./js/config/resources.js";
     import Loader from './js/loaders/loadResource.js'
     import CameraShake from  './js/config/CameraShake.js'
+    import {EffectComposer} from './js/postprocessing/EffectComposer.js'
+    import {RenderPass} from './js/postprocessing/RenderPass.js'
+    import {UnrealBloomPass} from './js/postprocessing/UnrealBloomPass.js'
     // import DynamicEnv from  './js/config/DynamicEnv.js'
     import { vertexShader as vertexWind} from "./js/shaders/wind/vertex_line.js";
     import {fragmentShader as fragmentWind} from "./js/shaders/wind/fragment_line_wind.js";
@@ -97,7 +100,7 @@
     let nameToMeshDic = {};
     let loadMap = {};
     let windLine = { opacity : 0}
-    let  groundLoader, cubeRenderTarget, cubeCamera;
+    let groundLoader, cubeRenderTarget, cubeCamera, effectComposer, bloomPass, clippingPlane, clippingPlane2;
 
     const wheel = {
         wheel_back_right: null,
@@ -191,10 +194,25 @@
                 scene.environment = dynamicEnv.envMap;
                 dynamicEnv.setWeight(0);
             }*/
-
             intoScene()
         },1000)
     })
+
+    initPostProcessing()
+    function initPostProcessing() {
+        effectComposer = new EffectComposer(renderer);
+        const renderPass = new RenderPass(scene, camera);
+        effectComposer.addPass(renderPass);
+
+        bloomPass = new UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight),
+            0.45,
+            0.1,
+            0.1
+        );
+        // bloomPass.enabled = false;
+        effectComposer.addPass(bloomPass);
+    }
 
     function intoScene(){
         const loading_complete = document.querySelector('.loading-complete')
@@ -252,9 +270,9 @@
                 envmap1 = texture
             },
             'env_light':(texture) =>{
-                envmap2 = texture
                 texture.mapping = THREE.EquirectangularReflectionMapping
                 scene.environment = texture
+                envmap2 = texture
             },
             'roadMesh': (banMa)=>{
                 banMa.wrapS = THREE.RepeatWrapping;
@@ -314,6 +332,24 @@
             'carLoad': (gltf)=>{
                 nameToMeshDic['car'] = gltf.scene
                 gltf.scene.traverse((child)=>{
+                    if (child.name === 'Object_18'){
+                        // clippingPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 0);
+                        // clippingPlane.constant = -0.0;
+                        // clippingPlane2 = new THREE.Plane(new THREE.Vector3(-1, 0, 0), -1);
+                        // clippingPlane2.constant = 0.1;
+                        //
+                        // const clippingPlaneHelper = new THREE.PlaneHelper( clippingPlane, 2, 0xffffff );
+                        // scene.add(clippingPlaneHelper);
+                        // const clipping2PlaneHelper = new THREE.PlaneHelper( clippingPlane2, 2, 0xff0000 );
+                        // scene.add(clipping2PlaneHelper);
+                        // child.material = new THREE.MeshBasicMaterial({
+                        //     side: THREE.DoubleSide,
+                        //     clippingPlanes: [clippingPlane, clippingPlane2],
+                        //     // clipShadows: true,
+                        //     // alphaToCoverage: true,
+                        // });
+                        // renderer.localClippingEnabled = false;
+                    }
                     if (['topLigt','radar','empennage'].includes(child.name)){
                         nameToMeshDic[child.name] = child
                     }
@@ -330,7 +366,7 @@
                         child.material.roughnessMap = new THREE.TextureLoader().load('./img/t_floor_roughness.webp')
 
                         child.material.normalMap.flipY = false
-                        child.material.normalMap.colorSpace = THREE.LinearSRGBColorSpacel
+                        child.material.normalMap.colorSpace = THREE.LinearSRGBColorSpace
                         child.material.normalMap.wrapS = THREE.RepeatWrapping
                         child.material.normalMap.wrapS = THREE.RepeatWrapping
 
@@ -344,9 +380,6 @@
 
                     if (child.type === 'Mesh'){
                         // child.material.envMap = cubeRenderTarget.texture;
-                        if (child.name !== '平面'){
-                            child.material.envMapIntensity = 15;
-                        }
                         child.castShadow = true;
                         child.receiveShadow = true;
                     }
@@ -412,6 +445,7 @@
                 isMouseDown = true
                 isCarRunning = true
                 nameToMeshDic['topLigt'].visible = false
+                bloomPass.enabled = false
                 nameToMeshDic['topLigt'].material.emissiveIntensity = 0
                 nameToMeshDic['tunnelOpacity'].material.uniforms.iTime.value = 0.0
 
@@ -541,6 +575,7 @@
                         nameToMeshDic['tunnelOpacity'].material.uniforms.uOpacity.value = tunnel.material.opacity
                     },
                     onComplete: ()=>{
+                        bloomPass.enabled = true
                         isMouseDown = false
                     }
                 });
@@ -668,7 +703,7 @@
                 x:  -3.74,
                 y: 5.68,
                 z: -0.10,
-                duration: 1
+                duration: 3
             })
             nameToMeshDic['controlsTween'] = gsap.to(controls,{
                 maxDistance: 6,
@@ -686,10 +721,11 @@
         }
     }
 
-    function setCarEnvMap(){
+    function setCarEnvMap(intensity = 15){
         setTimeout(()=>{
             nameToMeshDic['car'].traverse(child=>{
-                if (child.isMesh){
+                if (child.isMesh && child.name !== '平面'){
+                    child.material.envMapIntensity = intensity;
                     child.material.envMap = cubeRenderTarget.texture
                 }
             })
@@ -928,6 +964,8 @@
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
 
+        effectComposer.setSize(window.innerWidth, window.innerHeight);
+
     }
 
     function isElementInViewport(el) {
@@ -985,7 +1023,9 @@
             }
         }
         controls.update();
-        renderer.render(scene, camera);
+        // renderer.render(scene, camera);
+        effectComposer.render();
+
     }
 
 </script>

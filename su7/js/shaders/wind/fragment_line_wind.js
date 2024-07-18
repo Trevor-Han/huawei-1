@@ -13,7 +13,7 @@ export const fragmentShader = `
 		
 		vec3 draw_line(vec2 uv,vec3 color, float shift, float freq){
 		// 粗细
-		 float line_thickness = 0.14;
+		 float line_thickness = 0.05;
 		// 中心纵向scale     
 			float amp_coef = 0.9;
 			uv.y -=IS(1.1,1.9,abs(uv.x)) * sin(uv.x + shift * freq) * amp_coef * sin(uv.x + shift);
@@ -24,23 +24,20 @@ export const fragmentShader = `
 			float speed = 0.5;
 			
 			float freq_coef = 1.5;
-		vec2 uv = vUv*2. - 1.;
-			// uv.x *= vCoord.x/vCoord.y;
+		    vec2 uv = vUv*2. - 1.;
 			
-		float shift = vTime * speed;
-		
-		float vProgress = smoothstep(-1.,1.,sin(vUv.x*12. + vTime*6.*random));
-		// end: x > 1 : 0  x < 0.9 : 1  0.9 < x < 1 : 1-->0  
-		float hideCorners = smoothstep(1., 0.9, vUv.x);
-		// begin: x < 0 : 0  x > 0.1 : 1  0 < x < 0.1 : 0--> 1
-		float hideCorners1 = smoothstep(0., 0.1, vUv.x);
-		
-		vec3 color = vec3(0.);
-		for (float idx = 0.; idx < 4.; idx += 1.){
-		color += draw_line(uv,vec3(0.2,0.3,0.6),shift+idx,1.+freq_coef);
-		}
-		vec3 finalColor = mix(color,color * 0.25,vProgress);
-		gl_FragColor = vec4(finalColor, opacity * hideCorners * hideCorners1);
+            float shift = vTime * speed;
+            
+            float vProgress = smoothstep(-1.,1.,sin(vUv.x*12. + vTime*6.*random));
+            float hideCorners = smoothstep(1., 0.9, vUv.x);
+            float hideCorners1 = smoothstep(0., 0.1, vUv.x);
+            
+            vec3 color = vec3(0.);
+            for (float idx = 0.; idx < 6.; idx += 1.){
+                color += draw_line(uv,vec3(0.2,0.3,0.6),shift+idx,1.+freq_coef);
+            }
+            vec3 finalColor = mix(color,color * 0.25,vProgress);
+            gl_FragColor = vec4(finalColor, opacity * hideCorners * hideCorners1);
 		}
 `
 
