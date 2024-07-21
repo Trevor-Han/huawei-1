@@ -513,12 +513,20 @@
 
                 nameToMeshDic['cameraTween'] && nameToMeshDic['cameraTween'].kill()
                 carCurve.userData['carCurveOpacityTween'] && carCurve.userData['carCurveOpacityTween'].kill()
+                carCurve.userData['cubeCarCurveTween'] && carCurve.userData['cubeCarCurveTween'].kill()
+
                 carCurve.userData['carCurveOpacityTween'] = gsap.to(carCurve.material, {
                     opacity: 1,
                     repeat: 0,
                     duration: 4,
                     ease: 'none',
                 });
+                carCurve.userData['cubeCarCurveTween'] = gsap.to(carCurve.material.map.offset,{
+                    y: carCurve.material.map.offset.y - 2,
+                    duration: fovDefault,
+                    repeat: -1,
+                    ease: 'none'
+                })
                 nameToMeshDic['cameraTween'] = gsap.to(camera, {
                     fov: fovTarget,
                     duration: 1,
@@ -600,11 +608,21 @@
 
                 nameToMeshDic['cameraTween'] && nameToMeshDic['cameraTween'].kill()
                 carCurve.userData['carCurveOpacityTween'] && carCurve.userData['carCurveOpacityTween'].kill()
+                carCurve.userData['cubeCarCurveTween'] && carCurve.userData['cubeCarCurveTween'].kill()
+
                 carCurve.userData['carCurveOpacityTween'] = gsap.to(carCurve.material, {
                     opacity: 0,
                     repeat: 0,
                     duration: 1,
                     ease: 'none',
+                    onUpdate:()=>{
+                        carCurve.userData['cubeCarCurveTween'] = gsap.to(carCurve.material.map.offset,{
+                            y:carCurve.material.map.offset.y - 2,
+                            duration: fovDefault,
+                            repeat: -1,
+                            ease: 'none'
+                        })
+                    },
                     onComplete:()=>{
                         loadMap['cubeGround'].visible = true
                     }
@@ -646,20 +664,15 @@
         tunnel.onclick = function (){
             recoverState()
             buttonSelect = buttonMap.tunnel
+            bloomPass.enabled = true
         }
 
         carBody.onclick = function (){
             recoverState()
             buttonSelect = buttonMap.body
-            const carCurve = nameToMeshDic['carCurve']
             loadMap['cubeGround'].visible = true
 
-            gsap.to(carCurve.material.map.offset,{
-                y: -2,
-                duration: fovDefault,
-                repeat: -1,
-                ease: 'none'
-            })
+
         }
 
         windDrag.onclick = function (){
@@ -836,6 +849,7 @@
         loadMap['cubeGround'].visible = false
         nameToMeshDic['topLigt'].visible = true
         radarGroup.visible = false
+        bloomPass.enabled = false
         nameToMeshDic['cameraOutRadar'] = gsap.to(camera.position,{
             x: -0.25,
             y: 1,
@@ -850,7 +864,7 @@
             ease: 'power5.inOut',
             onUpdate: () => {
                 camera.updateProjectionMatrix();
-            }
+            },
         })
         nameToMeshDic['windLineTween'] = gsap.to(windLine,{
             opacity: 0,
