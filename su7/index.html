@@ -33,7 +33,7 @@
         <div class="button-item" id="tunnel">Tunnel</div>
         <div class="button-item" id="car-body">Body</div>
         <div class="button-item" id="wind-drag">Wind Drag</div>
-        <div class="button-item" id="radar">雷达</div>
+        <div class="button-item" id="radar">radar</div>
     </div>
 </section>
 
@@ -58,6 +58,8 @@
     import {EffectComposer} from './js/postprocessing/EffectComposer.js'
     import {RenderPass} from './js/postprocessing/RenderPass.js'
     import {UnrealBloomPass} from './js/postprocessing/UnrealBloomPass.js'
+    import { RectAreaLightUniformsLib } from './js/3d/RectAreaLightUniformsLib.js'
+    // import {RectAreaLightHelper} from './js/3d/RectAreaLightHelper.js'
     // import DynamicEnv from  './js/config/DynamicEnv.js'
     import { vertexShader as vertexWind} from "./js/shaders/wind/vertex_line.js";
     import {fragmentShader as fragmentWind} from "./js/shaders/wind/fragment_line_wind.js";
@@ -88,7 +90,7 @@
     let fovDefault = 60;
     let fovTarget = 75;
     let curWheelRot = 0;
-    let wheelRotSpeed = 0.4;
+    let wheelRotSpeed = 0.6;
     let uSeep = 0.0;
     let buttonSelect = buttonMap.tunnel
     let isLandscapeScreen = false;
@@ -100,7 +102,7 @@
     let nameToMeshDic = {};
     let loadMap = {};
     let windLine = { opacity : 0}
-    let groundLoader, cubeRenderTarget, cubeCamera, effectComposer, bloomPass, clippingPlane, clippingPlane2;
+    let groundLoader, cubeRenderTarget, cubeCamera, effectComposer, bloomPass, clippingPlane, clippingPlane2,rectLight;
 
     const wheel = {
         wheel_back_right: null,
@@ -110,7 +112,7 @@
     }
 
     const camera = new THREE.PerspectiveCamera( fovTarget, width / height, 0.1, 500 );
-    camera.position.set( -0.1072,  1, -3.4973);
+    camera.position.set( -0.1072,  0.5, -3.4973);
     camera.uIntensity = 0
 
     scene.background = new THREE.Color( 0x000000 );
@@ -142,7 +144,7 @@
     // gui.add(cubeCamera.position, 'z', -10, 10)
 
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target = new THREE.Vector3(0, 1, 0);
+    controls.target = new THREE.Vector3(0, 0.5, 0);
 
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
@@ -258,7 +260,6 @@
         updateLoadingProgress(progress, text)
 
     }
-
     function loaderCustom(type){
         const StrategyMap = {
             'sceneLoad': (texture)=>{
@@ -277,19 +278,19 @@
             'roadMesh': (banMa)=>{
                 banMa.wrapS = THREE.RepeatWrapping;
                 banMa.wrapT = THREE.RepeatWrapping;
-                banMa.repeat.set(1, 6);
+                banMa.repeat.set(3, 1);
 
-                const PlaneGeometry =  new THREE.PlaneGeometry(100,15)
-                const MeshStandardMaterial =  new THREE.MeshStandardMaterial({
+                const PlaneGeometry =  new THREE.PlaneGeometry(60,12)
+                const MeshStandardMaterial =  new THREE.MeshPhysicalMaterial({
                     map:banMa,
-                    color: '#343434'
+                    color: '#626262'
                 })
                 const roadMesh = new THREE.Mesh(
                     PlaneGeometry,
                     MeshStandardMaterial
                 )
                 roadMesh.rotation.x = - Math.PI / 2;
-                roadMesh.position.y = -0.1;
+                roadMesh.position.y = 0.01;
                 return roadMesh
             } ,
             'otherCarLoad': (gltf)=>{
@@ -363,17 +364,17 @@
                     if (child.name === '平面'){
                         child.material.envMap = cubeRenderTarget.texture;
                         child.material.normalMap = new THREE.TextureLoader().load('./img/t_floor_normal.webp')
-                        child.material.roughnessMap = new THREE.TextureLoader().load('./img/t_floor_roughness.webp')
+                        // child.material.roughnessMap = new THREE.TextureLoader().load('./img/t_floor_roughness.webp')
 
                         child.material.normalMap.flipY = false
                         child.material.normalMap.colorSpace = THREE.LinearSRGBColorSpace
                         child.material.normalMap.wrapS = THREE.RepeatWrapping
                         child.material.normalMap.wrapS = THREE.RepeatWrapping
 
-                        child.material.roughnessMap.flipY = false
-                        child.material.roughnessMap.colorSpace = THREE.LinearSRGBColorSpace
-                        child.material.roughnessMap.wrapS = THREE.RepeatWrapping
-                        child.material.roughnessMap.wrapS = THREE.RepeatWrapping
+                        // child.material.roughnessMap.flipY = false
+                        // child.material.roughnessMap.colorSpace = THREE.LinearSRGBColorSpace
+                        // child.material.roughnessMap.wrapS = THREE.RepeatWrapping
+                        // child.material.roughnessMap.wrapS = THREE.RepeatWrapping
 
                         groundLoader = child
                     }
@@ -707,8 +708,10 @@
             loadMap['otherCarLoad'].visible = true
             nameToMeshDic['topLigt'].visible = false
             radarGroup.visible = true
+            rectLight.visible = true
             groundLoader.visible = false
             isCarRunning = true
+            scene.environment = null
 
             nameToMeshDic['cameraOutRadar'] && nameToMeshDic['cameraOutRadar'].kill()
             nameToMeshDic['controlsTween'] && nameToMeshDic['controlsTween'].kill()
@@ -719,8 +722,8 @@
                 duration: 3
             })
             nameToMeshDic['controlsTween'] = gsap.to(controls,{
-                maxDistance: 6,
-                minDistance: 6,
+                maxDistance: 5,
+                minDistance: 5,
                 duration: 1,
                 repeat: 0,
                 ease: 'none',
@@ -733,7 +736,20 @@
             setOtherCar();
         }
     }
+    RectAreaLight()
+    function RectAreaLight(){
+        const width = 5;
+        const height = 2;
+        const intensity = 5;
+        rectLight = new THREE.RectAreaLight( 0xffffff, intensity,  width, height );
+        rectLight.rotation.x = - Math.PI / 2
+        rectLight.position.set( 0, 3, 0 );
+        rectLight.visible = false
+        scene.add( rectLight )
 
+        // const rectLightHelper = new RectAreaLightHelper( rectLight );
+        // scene.add( rectLightHelper );
+    }
     function setCarEnvMap(intensity = 15){
         setTimeout(()=>{
             nameToMeshDic['car'].traverse(child=>{
@@ -775,7 +791,7 @@
 
         car.userData['tween_' + type] = gsap.to(wheel[type].rotation, {
             z: curWheelRot - 4 * Math.PI,
-            duration: 1,
+            duration: 2,
             ease: 'power1.in',
             onUpdate: () => {
                 curWheelRot = wheel[type].rotation.z;
@@ -850,6 +866,9 @@
         nameToMeshDic['topLigt'].visible = true
         radarGroup.visible = false
         bloomPass.enabled = false
+        scene.environment = envmap2
+        rectLight.visible = false
+
         nameToMeshDic['cameraOutRadar'] = gsap.to(camera.position,{
             x: -0.25,
             y: 1,
@@ -950,8 +969,8 @@
         otherCar01.userData['otherCar02Tween'] && otherCar01.userData['otherCar02Tween'].kill();
 
         gsap.to(loadMap['roadMesh'].material.map.offset,{
-            x:loadMap['roadMesh'].material.map.offset.x - 1,
-            duration: 3,
+            x:loadMap['roadMesh'].material.map.offset.x + 1,
+            duration: 2,
             repeat: -1,
             ease: 'none'
         })
@@ -1002,7 +1021,7 @@
         if (groundLoader){
             groundLoader.visible = false;
             cubeCamera.position.copy(camera.position);
-            cubeCamera.position.y *= -1;
+            cubeCamera.position.y *= - 1;
             cubeCamera.update(renderer,scene);
             groundLoader.visible = true;
         }
@@ -1037,6 +1056,7 @@
             }
         }
         controls.update();
+        RectAreaLightUniformsLib.init();
         // renderer.render(scene, camera);
         effectComposer.render();
 
