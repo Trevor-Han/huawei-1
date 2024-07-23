@@ -29,13 +29,39 @@
 <section class="su7">
     <div class="su7-con"></div>
 
-    <div class="buttons">
-        <div class="button-item" id="tunnel">Tunnel</div>
-        <div class="button-item" id="car-body">Body</div>
-        <div class="button-item" id="wind-drag">Wind Drag</div>
-        <div class="button-item" id="radar">radar</div>
+    <div class="StateTable-container" style="opacity: 1; transition: all 0.2s ease 0.3s;">
+        <div class="StateTable-content" style="opacity: 1; transform: none;">
+            <div class="backgroundLine"></div>
+            <div id="tunnel" class="item" style="background-color: rgb(255, 146, 69);">
+                <div class="item-Line"></div>
+                <div class="tableName">
+                    <div style="color: rgb(255, 255, 255);">SU7</div>
+                </div>
+                <div class="clickBox"></div>
+            </div>
+            <div id="car-body" class="item">
+                <div class="tableName">
+                    <div style="">车身</div>
+                </div>
+                <div class="clickBox"></div>
+            </div>
+            <div id="wind-drag" class="item">
+                <div class="tableName">
+                    <div style="">风阻</div>
+                </div>
+                <div class="clickBox"></div>
+            </div>
+            <div id="radar" class="item">
+                <div class="tableName">
+                    <div>雷达</div>
+                </div>
+                <div class="clickBox"></div>
+            </div>
+        </div>
     </div>
 </section>
+
+<div class="TopInfo-container"></div>
 
 <div class="dialog">
     <h3>请将设备横置</h3>
@@ -59,6 +85,8 @@
     import {RenderPass} from './js/postprocessing/RenderPass.js'
     import {UnrealBloomPass} from './js/postprocessing/UnrealBloomPass.js'
     import { RectAreaLightUniformsLib } from './js/3d/RectAreaLightUniformsLib.js'
+    import {text} from './js/utils/innerText.js'
+    import { MeshColorNode } from "./js/utils/innerMeshColor.js";
     // import {RectAreaLightHelper} from './js/3d/RectAreaLightHelper.js'
     // import DynamicEnv from  './js/config/DynamicEnv.js'
     import { vertexShader as vertexWind} from "./js/shaders/wind/vertex_line.js";
@@ -70,14 +98,15 @@
     const height = window.innerHeight;
     const loader = new Loader()
     const buttonMap = {
-        tunnel: '1',
-        body: '2',
-        windDrag: '3',
-        radar: '4'
+        tunnel: 'tunnel',
+        body: 'body',
+        windDrag: 'windDrag',
+        radar: 'radar'
     }
 
     const elementSu7 = document.querySelector('.su7');
     const dialog = document.querySelector('.dialog');
+    const TopInfoContainer = document.querySelector('.TopInfo-container');
     const scene = new THREE.Scene();
     const clock = new THREE.Clock();
 
@@ -224,6 +253,11 @@
 
         loading_con.addEventListener('animationend', function() {
             loading_con.classList.add("display-none")
+            MeshColorNode((color)=>{
+                nameToMeshDic['MeshColor'].material.color.set(color)
+            })
+            TopInfoContainer.innerHTML = text.tunnel
+            TopInfoContainer.style.opacity = 1
         });
          nameToMeshDic['cameraFovTween'] = gsap.to(camera,{
             fov: fovDefault,
@@ -249,28 +283,29 @@
 
     }
 
-    function updateLoadingProgress(progress,loading_text){
+    function updateLoadingProgress(progress, loading_text) {
         progress && (progress.textContent = loading_text);
     }
 
-    function progressText(percent){
-        const text =  `加载场景模型: ${parseInt(percent)} %`
+    function progressText(percent) {
+        const text = `加载场景模型: ${parseInt(percent)} %`
         const progress = document.querySelector('.progress')
 
         updateLoadingProgress(progress, text)
 
     }
-    function loaderCustom(type){
+
+    function loaderCustom(type) {
         const StrategyMap = {
-            'sceneLoad': (texture)=>{
+            'sceneLoad': (texture) => {
                 // scene.background = texture;
                 // scene.environment = texture;
                 // texture.mapping = THREE.EquirectangularReflectionMapping;
             },
-            'env_night':(texture) =>{
+            'env_night': (texture) => {
                 envmap1 = texture
             },
-            'env_light':(texture) =>{
+            'env_light': (texture) => {
                 texture.mapping = THREE.EquirectangularReflectionMapping
                 scene.environment = texture
                 envmap2 = texture
@@ -360,6 +395,9 @@
                     if(['wheel_back_right','wheel_back_left','wheel_front_right','wheel_front_left'].includes(child.name)){
                         wheel[child.name] = child
                     }
+                    if (child.name === 'Object_18'){
+                        nameToMeshDic['MeshColor'] = child
+                    }
 
                     if (child.name === '平面'){
                         child.material.envMap = cubeRenderTarget.texture;
@@ -437,6 +475,7 @@
         }
         if (e.button === 0) {
             if (buttonSelect === buttonMap.tunnel){
+                // return;
                 const tunnel = nameToMeshDic['tunnel']
                 const car = nameToMeshDic['car']
 
@@ -456,8 +495,6 @@
                 nameToMeshDic['cameraDynTween'] && nameToMeshDic['cameraDynTween'].kill()
                 nameToMeshDic['cameraShakeTween'] && nameToMeshDic['cameraShakeTween'].kill()
                 tunnel.userData['tunnelTween'] && tunnel.userData['tunnelTween'].kill()
-                car.userData['empennagePosTween'] &&  car.userData['empennagePosTween'].kill()
-                car.userData['empennageRosTween'] &&  car.userData['empennageRosTween'].kill()
 
                 nameToMeshDic['cameraTween'] = gsap.to(camera, {
                     fov: fovTarget,
@@ -469,17 +506,17 @@
                         camera.updateProjectionMatrix();
                     }
                 });
-                nameToMeshDic['cameraShakeTween'] = gsap.to(camera, {
-                    cameraShakeIntensity: 1,
-                    duration:4,
-                    repeat: -1,
-                    ease: "power2.out",
-                    onUpdate:()=>{
-                        camera.position.add(cameraShake.tweenedPosOffset);
-                        cameraShake.setIntensity(camera.cameraShakeIntensity);
-                        cameraShake.update();
-                    }
-                });
+                // nameToMeshDic['cameraShakeTween'] = gsap.to(camera, {
+                //     cameraShakeIntensity: 1,
+                //     duration:4,
+                //     repeat: -1,
+                //     ease: "power2.out",
+                //     onUpdate:()=>{
+                //         camera.position.add(cameraShake.tweenedPosOffset);
+                //         cameraShake.setIntensity(camera.cameraShakeIntensity);
+                //         cameraShake.update();
+                //     }
+                // });
 
                 tunnel.userData['tunnelTween'] = gsap.to(tunnel.material,{
                     opacity: 1,
@@ -493,19 +530,7 @@
                     }
                 })
 
-                car.userData['empennagePosTween'] = gsap.to(nameToMeshDic['empennage'].position,{
-                    x: -0.42,
-                    y: 236.14,
-                    z: -107.97,
-                    duration: 2,
-                    repeat: 0,
-                })
-                car.userData['empennageRosTween'] = gsap.to(nameToMeshDic['empennage'].rotation,{
-                    x: -0.189,
-                    repeat: 0,
-                    duration: 2,
-                })
-
+                carEmpennageState()
                 carWheelForward()
             }
             if (buttonSelect === buttonMap.body) {
@@ -538,6 +563,33 @@
                     }
                 });
             }
+            if (buttonSelect === buttonMap.radar){
+
+                loadMap['roadMesh'].visible = true
+                loadMap['otherCarLoad'].visible = true
+                radarGroup.visible = true
+                groundLoader.visible = false
+                isCarRunning = true
+                scene.environment = null
+
+                nameToMeshDic['controlsTween'] && nameToMeshDic['controlsTween'].kill()
+
+                nameToMeshDic['controlsTween'] = gsap.to(controls,{
+                    maxDistance: 6.5,
+                    minDistance: 6.5,
+                    duration: 1,
+                    repeat: 0,
+                    onUpdate: () => {
+                        camera.updateProjectionMatrix();
+                    }
+                })
+
+                carEmpennageState()
+                carWheelForward()
+                setRadarMesh();
+                setOtherCar();
+
+            }
         }
 
     })
@@ -556,8 +608,6 @@
                 isCarRunning = false
                 nameToMeshDic['cameraTween'] && nameToMeshDic['cameraTween'].kill()
                 nameToMeshDic['cameraShakeTween'] && nameToMeshDic['cameraShakeTween'].kill()
-                car.userData['empennagePosTween'] &&  car.userData['empennagePosTween'].kill()
-                car.userData['empennageRosTween'] &&  car.userData['empennageRosTween'].kill()
                 tunnel.userData['tunnelTween'] &&  tunnel.userData['tunnelTween'].kill()
 
                 nameToMeshDic['cameraTween'] = gsap.to(camera, {
@@ -588,22 +638,10 @@
                         isMouseDown = false
                     }
                 });
-                car.userData['empennagePosTween'] = gsap.to(nameToMeshDic['empennage'].position,{
-                    x: 0.735,
-                    y: 230.15,
-                    z: -97.55,
-                    duration: 2,
-                    repeat: 0,
-                })
-                car.userData['empennageRosTween'] = gsap.to(nameToMeshDic['empennage'].rotation,{
-                    x: 0,
-                    repeat: 0,
-                    duration: 2,
-                })
 
+                carEmpennageStop()
                 carWheelStop()
             }
-
             if (buttonSelect === buttonMap.body){
                 const carCurve = nameToMeshDic['carCurve']
 
@@ -638,6 +676,27 @@
                     }
                 });
             }
+            if (buttonSelect === buttonMap.radar){
+                loadMap['roadMesh'].visible = false
+                loadMap['otherCarLoad'].visible = false
+                radarGroup.visible = false
+                groundLoader.visible = true
+                isCarRunning = false
+
+                nameToMeshDic['controlsTween'] && nameToMeshDic['controlsTween'].kill()
+
+                nameToMeshDic['controlsTween'] = gsap.to(controls,{
+                    maxDistance: 5,
+                    minDistance: 5,
+                    duration: 1,
+                    repeat: 0,
+                    onUpdate: () => {
+                        camera.updateProjectionMatrix();
+                    }
+                })
+                carEmpennageStop()
+                carWheelStop()
+            }
         }
 
     })
@@ -663,23 +722,40 @@
         const radar = document.getElementById('radar');
 
         tunnel.onclick = function (){
-            recoverState()
+            if (  buttonSelect === buttonMap.tunnel) return
             buttonSelect = buttonMap.tunnel
+            recoverState()
             bloomPass.enabled = true
+
+            nameToMeshDic['cameraOutRadar'] = gsap.to(camera.position,{
+                x: -0.1072,
+                y: 0.5,
+                z: -3.4973,
+                duration: 3,
+                ease: 'power2.out',
+            })
         }
 
         carBody.onclick = function (){
-            recoverState()
+            if (  buttonSelect === buttonMap.body) return
             buttonSelect = buttonMap.body
+            recoverState()
             loadMap['cubeGround'].visible = true
 
-
+            nameToMeshDic['cameraOutRadar'] = gsap.to(camera.position,{
+                x: 1.5835,
+                y: 0.7899,
+                z: 2.5314,
+                duration: 3,
+                ease: 'power2.out',
+            })
         }
 
         windDrag.onclick = function (){
+            if (  buttonSelect === buttonMap.windDrag) return
+            buttonSelect = buttonMap.windDrag
             recoverState()
             nameToMeshDic['topLigt'].visible = false
-            buttonSelect = buttonMap.windDrag
             nameToMeshDic['windLineTween'] = gsap.to(windLine,{
                 opacity: 1,
                 duration: 1,
@@ -689,29 +765,25 @@
                     windLineOpacityTween(windLine.opacity)
                 }
             })
-            gsap.to(camera.position,{
-                x: 3.273,
+            nameToMeshDic['cameraOutRadar'] =  gsap.to(camera.position,{
+                x: 1.5290,
                 y: 1,
-                z: -1.239,
-                duration: 1,
+                z: -2.5425,
+                duration: 3,
+                ease: 'power2.out',
             })
 
 
         }
 
         radar.onclick = function (){
+            if (  buttonSelect === buttonMap.radar) return
+            buttonSelect = buttonMap.radar
             recoverState()
 
-            buttonSelect = buttonMap.radar
             isRadar = true;
-            loadMap['roadMesh'].visible = true
-            loadMap['otherCarLoad'].visible = true
             nameToMeshDic['topLigt'].visible = false
-            radarGroup.visible = true
             rectLight.visible = true
-            groundLoader.visible = false
-            isCarRunning = true
-            scene.environment = null
 
             nameToMeshDic['cameraOutRadar'] && nameToMeshDic['cameraOutRadar'].kill()
             nameToMeshDic['controlsTween'] && nameToMeshDic['controlsTween'].kill()
@@ -719,21 +791,22 @@
                 x:  -3.74,
                 y: 5.68,
                 z: -0.10,
-                duration: 3
+                duration: 3,
+                ease: 'power2.out',
             })
             nameToMeshDic['controlsTween'] = gsap.to(controls,{
                 maxDistance: 5,
                 minDistance: 5,
                 duration: 1,
                 repeat: 0,
-                ease: 'none',
                 onUpdate: () => {
                     camera.updateProjectionMatrix();
+                },
+                onComplete: ()=>{
+                    TopInfoContainer.innerHTML = text[buttonMap[buttonSelect]]
+                    TopInfoContainer.style.opacity = 1
                 }
             })
-            carWheelForward()
-            setRadarMesh();
-            setOtherCar();
         }
     }
     RectAreaLight()
@@ -769,6 +842,45 @@
                 }
             })
         },100)
+    }
+
+    function carEmpennageState(){
+        const car = nameToMeshDic['car']
+
+        car.userData['empennagePosTween'] && car.userData['empennagePosTween'].kill()
+        car.userData['empennageRosTween'] && car.userData['empennageRosTween'].kill()
+
+        car.userData['empennagePosTween'] = gsap.to(nameToMeshDic['empennage'].position,{
+            x: -0.42,
+            y: 236.14,
+            z: -107.97,
+            duration: 2,
+            repeat: 0,
+        })
+        car.userData['empennageRosTween'] = gsap.to(nameToMeshDic['empennage'].rotation,{
+            x: -0.189,
+            repeat: 0,
+            duration: 2,
+        })
+    }
+    function carEmpennageStop(){
+        const car = nameToMeshDic['car']
+
+        car.userData['empennagePosTween'] && car.userData['empennagePosTween'].kill()
+        car.userData['empennageRosTween'] && car.userData['empennageRosTween'].kill()
+
+        car.userData['empennagePosTween'] = gsap.to(nameToMeshDic['empennage'].position,{
+            x: 0.735,
+            y: 230.15,
+            z: -97.55,
+            duration: 2,
+            repeat: 0,
+        })
+        car.userData['empennageRosTween'] = gsap.to(nameToMeshDic['empennage'].rotation,{
+            x: 0,
+            repeat: 0,
+            duration: 2,
+        })
     }
     function carWheelForward(){
         const car = nameToMeshDic['car']
@@ -868,22 +980,21 @@
         bloomPass.enabled = false
         scene.environment = envmap2
         rectLight.visible = false
+        TopInfoContainer.style.opacity = 0
 
-        nameToMeshDic['cameraOutRadar'] = gsap.to(camera.position,{
-            x: -0.25,
-            y: 1,
-            z: -3.49,
-            duration: 1
-        })
         nameToMeshDic['controlsTween'] = gsap.to(controls,{
-            maxDistance: 3.5,
-            minDistance: 3.5,
+            maxDistance: 3,
+            minDistance: 3,
             duration: 1,
             repeat: 0,
             ease: 'power5.inOut',
             onUpdate: () => {
                 camera.updateProjectionMatrix();
             },
+            onComplete: ()=>{
+                TopInfoContainer.innerHTML = text[buttonMap[buttonSelect]]
+                TopInfoContainer.style.opacity = 1
+            }
         })
         nameToMeshDic['windLineTween'] = gsap.to(windLine,{
             opacity: 0,
@@ -901,6 +1012,7 @@
     }
 
     function setRadarMesh(){
+
         const child = nameToMeshDic['radar'];
         const boxGeo = new THREE.BoxGeometry(0.02,0.01,0.1);
         const positionAttributes = child.geometry.getAttribute('position');
@@ -1058,6 +1170,7 @@
         controls.update();
         RectAreaLightUniformsLib.init();
         // renderer.render(scene, camera);
+        // console.log(camera.position);
         effectComposer.render();
 
     }
