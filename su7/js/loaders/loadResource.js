@@ -1,7 +1,13 @@
 import { GLTFLoader }  from './GLTFLoader.js';
 import { RGBELoader } from './RGBELoader.js';
+import {DRACOLoader} from "./DRACOLoader.js";
 import {TextureLoader} from '../3d/three.module.js'
 import {MeshoptDecoder} from './meshopt_decoder.module.js'
+
+// 实例化加较器draco
+const dracoloader = new DRACOLoader();
+//指明解压工具的地址
+dracoloader.setDecoderPath("/su7/js/3d/draco/");
 
 export default class Loader {
     constructor(){
@@ -29,6 +35,7 @@ export default class Loader {
             return
         }
         let loader
+        this.gltfLoader.setDRACOLoader(dracoloader)
 
         switch (type) {
             case 'GLTF':
@@ -46,7 +53,6 @@ export default class Loader {
             default:
                 loader = this.textureLoader
         }
-
         loader.load(
             resource.path,
             res => { this.#loadSuccess(resource, res) },
