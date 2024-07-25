@@ -128,6 +128,7 @@
     let runTunnel = false;
     let isMouseDown = false;
     let isCarRunning = false;
+    let isRadarRunning = false;
     let nameToMeshDic = {};
     let loadMap = {};
     let windLine = { opacity : 0}
@@ -209,7 +210,8 @@
     })
 
     loader.onLoadEnd(()=>{
-        loadMap['roadMesh'].visible = false
+        // loadMap['roadMesh'].visible = false
+        loadMap['roadLoader'].visible = false
         loadMap['otherCarLoad'].visible = false
         loadMap['cubeGround'].visible = false
 
@@ -310,6 +312,9 @@
                 scene.environment = texture
                 envmap2 = texture
             },
+            'roadLoader':(road)=>{
+                return road.scene
+            },
             'roadMesh': (banMa)=>{
                 banMa.wrapS = THREE.RepeatWrapping;
                 banMa.wrapT = THREE.RepeatWrapping;
@@ -326,6 +331,7 @@
                 )
                 roadMesh.rotation.x = - Math.PI / 2;
                 roadMesh.position.y = 0.01;
+                roadMesh.visible = false
                 return roadMesh
             } ,
             'otherCarLoad': (gltf)=>{
@@ -565,18 +571,20 @@
             }
             if (buttonSelect === buttonMap.radar){
 
-                loadMap['roadMesh'].visible = true
+                // loadMap['roadMesh'].visible = true
+                loadMap['roadLoader'].visible = true
                 loadMap['otherCarLoad'].visible = true
                 radarGroup.visible = true
                 groundLoader.visible = false
                 isCarRunning = true
+                isRadarRunning = true
                 scene.environment = null
 
                 nameToMeshDic['controlsTween'] && nameToMeshDic['controlsTween'].kill()
 
                 nameToMeshDic['controlsTween'] = gsap.to(controls,{
-                    maxDistance: 6.5,
-                    minDistance: 6.5,
+                    maxDistance: 7.5,
+                    minDistance: 7.5,
                     duration: 1,
                     repeat: 0,
                     onUpdate: () => {
@@ -677,13 +685,15 @@
                 });
             }
             if (buttonSelect === buttonMap.radar){
-                loadMap['roadMesh'].visible = false
+                nameToMeshDic['roadLoaderTween'] &&  nameToMeshDic['roadLoaderTween'].kill()
+                // loadMap['roadMesh'].visible = false
+                loadMap['roadLoader'].position.set(0,0,0)
+                loadMap['roadLoader'].visible = false
                 loadMap['otherCarLoad'].visible = false
                 radarGroup.visible = false
                 groundLoader.visible = true
                 isCarRunning = false
-
-                nameToMeshDic['controlsTween'] && nameToMeshDic['controlsTween'].kill()
+                isRadarRunning = false
 
                 nameToMeshDic['controlsTween'] = gsap.to(controls,{
                     maxDistance: 5,
@@ -694,6 +704,7 @@
                         camera.updateProjectionMatrix();
                     }
                 })
+
                 carEmpennageStop()
                 carWheelStop()
             }
@@ -731,7 +742,7 @@
                 x: -0.1072,
                 y: 0.5,
                 z: -3.4973,
-                duration: 3,
+                duration: 2,
                 ease: 'power2.out',
             })
         }
@@ -746,7 +757,7 @@
                 x: 1.5835,
                 y: 0.7899,
                 z: 2.5314,
-                duration: 3,
+                duration: 2,
                 ease: 'power2.out',
             })
         }
@@ -769,7 +780,7 @@
                 x: 1.5290,
                 y: 1,
                 z: -2.5425,
-                duration: 3,
+                duration: 2,
                 ease: 'power2.out',
             })
 
@@ -788,10 +799,10 @@
             nameToMeshDic['cameraOutRadar'] && nameToMeshDic['cameraOutRadar'].kill()
             nameToMeshDic['controlsTween'] && nameToMeshDic['controlsTween'].kill()
             nameToMeshDic['cameraToRadar'] = gsap.to(camera.position,{
-                x:  -3.74,
-                y: 5.68,
-                z: -0.10,
-                duration: 3,
+                x:  -1.5097,
+                y: 5.2665,
+                z: -0.0144,
+                duration: 2,
                 ease: 'power2.out',
             })
             nameToMeshDic['controlsTween'] = gsap.to(controls,{
@@ -972,7 +983,8 @@
         nameToMeshDic['windLineTween'] && nameToMeshDic['windLineTween'].kill();
 
         isRadar = false;
-        loadMap['roadMesh'].visible = false
+        // loadMap['roadMesh'].visible = false
+        loadMap['roadLoader'].visible = false
         loadMap['otherCarLoad'].visible = false
         loadMap['cubeGround'].visible = false
         nameToMeshDic['topLigt'].visible = true
@@ -1028,7 +1040,7 @@
             radarGroup.position.set(0, 0.4, 0);
             for (let k = 0; k < 6; k++){
                 for (let i = 0; i< radarVertexArray.length; i++){
-                    const boxMat = new THREE.MeshBasicMaterial({color: 0xffffff});
+                    const boxMat = new THREE.MeshBasicMaterial({color: 0xffffff, depthWrite: false, depthTest: false});
                     const boxMesh = new THREE.Mesh(boxGeo,boxMat);
                     boxMesh.position.copy(radarVertexArray[i]);
                     boxMesh.visible = false;
@@ -1079,10 +1091,18 @@
 
         otherCar01.userData['otherCar01Tween'] && otherCar01.userData['otherCar01Tween'].kill();
         otherCar01.userData['otherCar02Tween'] && otherCar01.userData['otherCar02Tween'].kill();
+        nameToMeshDic['roadLoaderTween'] &&  nameToMeshDic['roadLoaderTween'].kill();
 
-        gsap.to(loadMap['roadMesh'].material.map.offset,{
-            x:loadMap['roadMesh'].material.map.offset.x + 1,
-            duration: 2,
+        // gsap.to(loadMap['roadMesh'].material.map.offset,{
+        //     x:loadMap['roadMesh'].material.map.offset.x + 1,
+        //     duration: 2,
+        //     repeat: -1,
+        //     ease: 'none'
+        // })
+
+        nameToMeshDic['roadLoaderTween'] = gsap.to(loadMap['roadLoader'].position,{
+            x: loadMap['roadLoader'].position.x - 25,
+            duration: 3,
             repeat: -1,
             ease: 'none'
         })
@@ -1130,7 +1150,7 @@
     let meshScale = 0;
     let temp = 1.5
     function renderLoop(){
-        if (groundLoader){
+        if (groundLoader && !isRadarRunning){
             groundLoader.visible = false;
             cubeCamera.position.copy(camera.position);
             cubeCamera.position.y *= - 1;

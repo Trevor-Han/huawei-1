@@ -14,5 +14,6 @@ export default [
     { name: 'carLoad',  type: LoaderType.GLTF, path: './models/gltf/su7-car_edit.glb' },
     { name: 'carCurveLoad',  type: LoaderType.GLTF, path: './models/gltf/xiedu.glb' },
     { name: 'cubeGround',  type: LoaderType.GLTF, path: './models/gltf/cubeGround.glb' },
-    { name: 'tunnelLoader',  type: LoaderType.GLTF, path: './models/gltf/tunnel.glb' }
+    { name: 'tunnelLoader',  type: LoaderType.GLTF, path: './models/gltf/tunnel.glb' },
+    { name: 'roadLoader',  type: LoaderType.GLTF, path: './models/gltf/road.glb' }
 ]
